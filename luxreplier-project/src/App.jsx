@@ -68,6 +68,12 @@ const BUSINESS_TYPES = [
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
+const STRIPE_LINKS = {
+  starter: "https://buy.stripe.com/test_14A8wRaWU2YndR02tr9fW03",
+  business: "https://buy.stripe.com/test_dRmfZjfdacyXdR03xv9fW04",
+  premium: "https://buy.stripe.com/test_3cI00l3usaqP6oygkh9fW05",
+};
+
 export default function LuxReplier() {
   const [view, setView] = useState("home");
   const [step, setStep] = useState(1);
@@ -202,9 +208,9 @@ CRITICAL RULES:
     { icon: "🔗", t: "Shareable Link", d: "No website? Share a direct chat link anywhere." },
   ];
   const plans = [
-    { n: "Starter", p: "99", f: ["1 language", "AI customer chat", "50 documents/mo", "Email support"] },
-    { n: "Business", p: "199", f: ["4 languages", "AI chat + documents", "Unlimited documents", "Priority support", "Website widget"], pop: true, label: "Best value" },
-    { n: "Premium", p: "299", f: ["Everything in Business", "Custom AI training", "Multi-location", "Dedicated manager", "API access"] },
+    { n: "Starter", p: "99", f: ["1 language", "AI customer chat", "50 documents/mo", "Email support"], link: STRIPE_LINKS.starter },
+    { n: "Business", p: "199", f: ["4 languages", "AI chat + documents", "Unlimited documents", "Priority support", "Website widget"], pop: true, label: "Best value", link: STRIPE_LINKS.business },
+    { n: "Premium", p: "299", f: ["Everything in Business", "Custom AI training", "Multi-location", "Dedicated manager", "API access"], link: STRIPE_LINKS.premium },
   ];
 
   // ═══════════════════════════════════
@@ -227,7 +233,8 @@ CRITICAL RULES:
               <button key={c} onClick={() => setLang(c)} style={{ padding: "5px 8px", border: "none", background: lang === c ? "var(--accent-soft)" : "transparent", borderRadius: 6, cursor: "pointer", fontSize: 15, opacity: lang === c ? 1 : 0.5, transition: "all .2s" }}>{f}</button>
             ))}
             <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 8px" }} />
-            <button className="btn btn-p" onClick={() => setView("signup")} style={{ padding: "9px 18px" }}>{tx.cta}</button>
+            <button className="btn btn-g" onClick={() => setView("signup")}>Demo</button>
+            <button className="btn btn-p" onClick={() => window.open(STRIPE_LINKS.business, "_blank")} style={{ padding: "9px 18px" }}>{tx.cta}</button>
           </div>
         </div>
       </nav>
@@ -239,7 +246,7 @@ CRITICAL RULES:
         </h1>
         <p className="fu fu2" style={{ fontSize: 17, color: "var(--muted)", lineHeight: 1.65, maxWidth: 560, margin: "0 auto 32px" }}>{tx.sub}</p>
         <div className="fu fu3 m-col" style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-          <button className="btn btn-p m-full" style={{ padding: "14px 32px", fontSize: 16 }} onClick={() => setView("signup")}>{tx.cta} →</button>
+          <button className="btn btn-p m-full" style={{ padding: "14px 32px", fontSize: 16 }} onClick={() => window.open(STRIPE_LINKS.business, "_blank")}>{tx.cta} →</button>
           <button className="btn btn-o m-full" style={{ padding: "14px 32px", fontSize: 16 }} onClick={() => scrollTo("features")}>{tx.cta2}</button>
         </div>
       </section>
@@ -280,7 +287,7 @@ CRITICAL RULES:
               <div style={{ marginBottom: 4 }}><span style={{ fontSize: 40, fontWeight: 800, color: "var(--navy)", fontFamily: "var(--display)" }}>€{p.p}</span><span style={{ fontSize: 14, color: "var(--muted)" }}>/mo</span></div>
               {p.label ? <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600, marginBottom: 18 }}>{p.label}</div> : <div style={{ marginBottom: 18 }} />}
               {p.f.map((f, j) => (<div key={j} style={{ fontSize: 13, padding: "5px 0", display: "flex", gap: 8 }}><span style={{ color: "var(--green)" }}>✓</span>{f}</div>))}
-              <button className={`btn ${p.pop ? "btn-p" : "btn-o"}`} style={{ width: "100%", marginTop: 18 }} onClick={() => setView("signup")}>{tx.cta}</button>
+              <button className={`btn ${p.pop ? "btn-p" : "btn-o"}`} style={{ width: "100%", marginTop: 18 }} onClick={() => window.open(p.link, "_blank")}>{tx.cta}</button>
             </div>
           ))}
         </div>
@@ -290,7 +297,7 @@ CRITICAL RULES:
         <div style={{ background: "linear-gradient(135deg, var(--navy), #2A4470)", borderRadius: 18, padding: "48px 32px", textAlign: "center", boxShadow: "var(--shadow-lg)" }}>
           <h2 style={{ fontFamily: "var(--display)", fontSize: 26, color: "white", fontWeight: 700, marginBottom: 10 }}>{tx.fin}</h2>
           <p style={{ color: "rgba(255,255,255,.7)", fontSize: 15, marginBottom: 24 }}>Join Luxembourg businesses already using LuxReplier</p>
-          <button className="btn" style={{ background: "white", color: "var(--navy)", padding: "14px 32px", fontSize: 15, fontWeight: 700 }} onClick={() => setView("signup")}>{tx.fb}</button>
+          <button className="btn" style={{ background: "white", color: "var(--navy)", padding: "14px 32px", fontSize: 15, fontWeight: 700 }} onClick={() => window.open(STRIPE_LINKS.business, "_blank")}>{tx.fb}</button>
         </div>
       </section>
       <footer style={{ borderTop: "1px solid var(--border)", padding: 24, textAlign: "center" }}>
