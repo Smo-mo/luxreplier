@@ -153,7 +153,7 @@ CRITICAL RULES:
 7. NEVER be negative. Always offer alternatives. If you can't help, suggest they call directly.
 8. Luxembourgish: If someone writes in Luxembourgish, reply in Luxembourgish. Example: "Moien! Wéi kann ech Iech hëllefen? 😊"`;
 
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -180,7 +180,7 @@ CRITICAL RULES:
       email: `Write a professional business email in ${langNames[docLang]} from "${setup.bizName}" (${selectedType.label}) to a client confirming their appointment/order/reservation. Be warm, professional, include a friendly emoji or two. Include relevant details.`,
     };
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, messages: [{ role: "user", content: prompts[docType] }] }),
