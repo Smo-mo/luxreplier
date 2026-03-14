@@ -335,9 +335,14 @@ CRITICAL RULES:
         </div>
       </section>
 
-      <footer style={{ borderTop: "1px solid var(--border)", padding: 24, textAlign: "center" }}>
-        <div style={{ fontSize: 13, color: "var(--muted)" }}>Made in Luxembourg 🇱🇺</div>
-        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>© 2026 LuxReplier. All rights reserved.</div>
+      <footer style={{ borderTop: "1px solid var(--border)", padding: "32px 24px", textAlign: "center" }}>
+        <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 8 }}>Made in Luxembourg 🇱🇺</div>
+        <div style={{ marginBottom: 12 }}>
+          <a href="mailto:contact@luxreplier.com" style={{ fontSize: 14, color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>
+            📧 contact@luxreplier.com
+          </a>
+        </div>
+        <div style={{ fontSize: 12, color: "var(--muted)" }}>© 2026 LuxReplier. All rights reserved.</div>
       </footer>
     </div>
   );
