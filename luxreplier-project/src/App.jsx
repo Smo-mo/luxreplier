@@ -51,7 +51,7 @@ label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bot
   .hide-m{display:none!important}.m-full{width:100%!important}
   .m-col{flex-direction:column!important}.m-stack{grid-template-columns:1fr!important}
   .m-2col{grid-template-columns:1fr 1fr!important}
-  .m-sm h1{font-size:28px!important}.m-p{padding:16px!important}
+  .m-sm h1{font-size:28px!important}.m-p{padding:16px!important}.show-m{display:block!important}
 }
 `;
 
