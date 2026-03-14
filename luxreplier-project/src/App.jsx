@@ -81,10 +81,8 @@ export default function LuxReplier() {
   const [lang, setLang] = useState("en");
   const [mobileMenu, setMobileMenu] = useState(false);
 
-  // Signup state
   const [signup, setSignup] = useState({ name: "", email: "", password: "", card: "" });
 
-  // Setup state
   const [setup, setSetup] = useState({
     bizName: "", bizType: "restaurant", address: "", phone: "", website: "",
     langs: { fr: true, de: true, en: true, lu: false },
@@ -92,20 +90,17 @@ export default function LuxReplier() {
     description: "", menu: null,
   });
 
-  // Chat state
   const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const chatEnd = useRef(null);
   const inputRef = useRef(null);
 
-  // Doc state
   const [docType, setDocType] = useState("invoice");
   const [docLang, setDocLang] = useState("fr");
   const [docResult, setDocResult] = useState(null);
   const [docLoading, setDocLoading] = useState(false);
 
-  // Widget state
   const [copied, setCopied] = useState("");
 
   useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, loading]);
@@ -120,7 +115,6 @@ export default function LuxReplier() {
     setTimeout(() => setCopied(""), 2000);
   };
 
-  // Build hours string for AI context
   const hoursStr = DAYS.map(d => {
     const h = setup.hours[d];
     return h.closed ? `${d}: Closed` : `${d}: ${h.open}–${h.close}`;
@@ -144,14 +138,14 @@ About: ${setup.description || "A local business in Luxembourg."}
 Languages spoken: ${activeLangs}
 
 CRITICAL RULES:
-1. DETECT the language of the user's message and ALWAYS reply in that SAME language. If French → reply French. German → German. English → English. Luxembourgish → Luxembourgish.
+1. DETECT the language of the user's message and ALWAYS reply in that SAME language.
 2. Keep responses concise (2-4 sentences) and warm.
-3. Use positive, friendly emojis naturally (😊 👍 ✨) but not too many — 1-2 per message max.
-4. For RESERVATIONS: Always check against the opening hours above. If the business is closed at the requested time, do NOT accept. Instead, kindly suggest the nearest available time. Always ask for: number of people, preferred date/time, name, and phone number. If a time might be busy, suggest an alternative politely.
-5. For QUESTIONS about menu/services/prices: Answer based on the business description. If you don't know specifics, say you'll check with the team and give a general helpful answer.
+3. Use positive, friendly emojis naturally but not too many — 1-2 per message max.
+4. For RESERVATIONS: Always check against the opening hours above. If closed, suggest nearest available time. Always ask for: number of people, preferred date/time, name, and phone number.
+5. For QUESTIONS about menu/services/prices: Answer based on the business description.
 6. For DIRECTIONS: Give helpful info about the address and suggest they check Google Maps.
-7. NEVER be negative. Always offer alternatives. If you can't help, suggest they call directly.
-8. Luxembourgish: If someone writes in Luxembourgish, reply in Luxembourgish. Example: "Moien! Wéi kann ech Iech hëllefen? 😊"`;
+7. NEVER be negative. Always offer alternatives.
+8. Luxembourgish: If someone writes in Luxembourgish, reply in Luxembourgish.`;
 
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -177,7 +171,7 @@ CRITICAL RULES:
     const prompts = {
       invoice: `Generate a professional invoice in ${langNames[docLang]} for "${setup.bizName}" (${selectedType.label} at ${setup.address || "Luxembourg City"}). Include: business header with Luxembourg address and phone ${setup.phone}, invoice #2026-0042, today's date, a sample client name, 3 realistic line items with EUR prices, subtotal, 17% TVA/VAT, total. Use clean plain-text formatting.`,
       quote: `Generate a professional quote/devis in ${langNames[docLang]} for "${setup.bizName}" (${selectedType.label} in Luxembourg). Include: business header, quote number, date, sample client, 3-4 service items with EUR prices, 30-day validity, payment terms.`,
-      email: `Write a professional business email in ${langNames[docLang]} from "${setup.bizName}" (${selectedType.label}) to a client confirming their appointment/order/reservation. Be warm, professional, include a friendly emoji or two. Include relevant details.`,
+      email: `Write a professional business email in ${langNames[docLang]} from "${setup.bizName}" (${selectedType.label}) to a client confirming their appointment/order/reservation. Be warm, professional, include a friendly emoji or two.`,
     };
     try {
       const res = await fetch("/api/chat", {
@@ -221,10 +215,13 @@ CRITICAL RULES:
       <style>{css}</style>
       <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(250,250,247,0.92)", backdropFilter: "blur(12px)", borderBottom: "1px solid var(--border)" }}>
         <div style={{ maxWidth: 1080, margin: "0 auto", padding: "12px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          {/* Logo */}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 34, height: 34, borderRadius: 9, background: "linear-gradient(135deg, var(--accent), var(--navy))", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 800, fontSize: 15, fontFamily: "var(--display)" }}>L</div>
             <span style={{ fontWeight: 700, fontSize: 19, color: "var(--navy)" }}>LuxReplier</span>
           </div>
+
+          {/* Desktop nav — hidden on mobile */}
           <div className="hide-m" style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <button className="btn btn-g" onClick={() => scrollTo("features")}>Features</button>
             <button className="btn btn-g" onClick={() => scrollTo("pricing")}>Pricing</button>
@@ -236,8 +233,41 @@ CRITICAL RULES:
             <button className="btn btn-g" onClick={() => setView("signup")}>Demo</button>
             <button className="btn btn-p" onClick={() => window.open(STRIPE_LINKS.business, "_blank")} style={{ padding: "9px 18px" }}>{tx.cta}</button>
           </div>
+
+          {/* ✅ FIX: Hamburger button uses className="show-m" — no broken ref */}
+          <button
+            className="show-m"
+            onClick={() => setMobileMenu(!mobileMenu)}
+            style={{ display: "none", background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "var(--navy)", padding: "4px 8px", lineHeight: 1 }}
+          >
+            {mobileMenu ? "✕" : "☰"}
+          </button>
         </div>
+
+        {/* ✅ Mobile dropdown menu with language flags + Demo */}
+        {mobileMenu && (
+          <div style={{ borderTop: "1px solid var(--border)", padding: "16px 24px", background: "rgba(250,250,247,0.97)", display: "flex", flexDirection: "column", gap: 10 }}>
+            <button className="btn btn-g" style={{ justifyContent: "flex-start", fontSize: 15 }} onClick={() => scrollTo("features")}>Features</button>
+            <button className="btn btn-g" style={{ justifyContent: "flex-start", fontSize: 15 }} onClick={() => scrollTo("pricing")}>Pricing</button>
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: ".05em" }}>Language</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {Object.entries(langFlags).map(([c, f]) => (
+                  <button key={c} onClick={() => { setLang(c); setMobileMenu(false); }}
+                    style={{ flex: 1, padding: "8px", border: "none", background: lang === c ? "var(--accent-soft)" : "var(--bg)", borderRadius: 8, cursor: "pointer", fontSize: 20, opacity: lang === c ? 1 : 0.5, transition: "all .2s" }}>
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+              <button className="btn btn-o" style={{ width: "100%", fontSize: 15 }} onClick={() => { setView("signup"); setMobileMenu(false); }}>🎬 Demo</button>
+              <button className="btn btn-p" style={{ width: "100%", fontSize: 15 }} onClick={() => { window.open(STRIPE_LINKS.business, "_blank"); setMobileMenu(false); }}>{tx.cta}</button>
+            </div>
+          </div>
+        )}
       </nav>
+
       {/* Hero */}
       <section style={{ maxWidth: 800, margin: "0 auto", padding: "64px 24px 48px", textAlign: "center" }}>
         <div className="fu" style={{ display: "inline-block", padding: "5px 16px", borderRadius: 20, background: "var(--accent-soft)", color: "var(--accent)", fontSize: 13, fontWeight: 600, marginBottom: 24 }}>{tx.badge}</div>
@@ -250,6 +280,7 @@ CRITICAL RULES:
           <button className="btn btn-o m-full" style={{ padding: "14px 32px", fontSize: 16 }} onClick={() => scrollTo("features")}>{tx.cta2}</button>
         </div>
       </section>
+
       {/* Stats */}
       <section className="fu fu4" style={{ maxWidth: 680, margin: "0 auto 56px", padding: "0 24px" }}>
         <div className="m-2col" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10 }}>
@@ -261,6 +292,7 @@ CRITICAL RULES:
           ))}
         </div>
       </section>
+
       {/* Features */}
       <section id="features" style={{ maxWidth: 800, margin: "0 auto", padding: "0 24px 56px" }}>
         <h2 style={{ fontFamily: "var(--display)", fontSize: 30, fontWeight: 700, color: "var(--navy)", textAlign: "center", marginBottom: 6 }}>{tx.ft}</h2>
@@ -275,6 +307,7 @@ CRITICAL RULES:
           ))}
         </div>
       </section>
+
       {/* Pricing */}
       <section id="pricing" style={{ maxWidth: 860, margin: "0 auto", padding: "0 24px 56px" }}>
         <h2 style={{ fontFamily: "var(--display)", fontSize: 30, fontWeight: 700, color: "var(--navy)", textAlign: "center", marginBottom: 6 }}>{tx.pt}</h2>
@@ -292,6 +325,7 @@ CRITICAL RULES:
           ))}
         </div>
       </section>
+
       {/* CTA */}
       <section style={{ maxWidth: 680, margin: "0 auto", padding: "0 24px 56px" }}>
         <div style={{ background: "linear-gradient(135deg, var(--navy), #2A4470)", borderRadius: 18, padding: "48px 32px", textAlign: "center", boxShadow: "var(--shadow-lg)" }}>
@@ -300,6 +334,7 @@ CRITICAL RULES:
           <button className="btn" style={{ background: "white", color: "var(--navy)", padding: "14px 32px", fontSize: 15, fontWeight: 700 }} onClick={() => window.open(STRIPE_LINKS.business, "_blank")}>{tx.fb}</button>
         </div>
       </section>
+
       <footer style={{ borderTop: "1px solid var(--border)", padding: 24, textAlign: "center" }}>
         <div style={{ fontSize: 13, color: "var(--muted)" }}>Made in Luxembourg 🇱🇺</div>
         <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>© 2026 LuxReplier. All rights reserved.</div>
@@ -319,9 +354,7 @@ CRITICAL RULES:
           <h1 style={{ fontFamily: "var(--display)", fontSize: 28, color: "var(--navy)", marginBottom: 6 }}>Start your free trial</h1>
           <p style={{ color: "var(--muted)", fontSize: 14 }}>14 days free · Cancel anytime · All features included</p>
         </div>
-
         <div className="card fu fu1" style={{ padding: 28 }}>
-          {/* Progress */}
           <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
             {["Account", "Payment"].map((s, i) => (
               <div key={i} style={{ flex: 1 }}>
@@ -330,74 +363,33 @@ CRITICAL RULES:
               </div>
             ))}
           </div>
-
           {step === 1 && (
             <div>
-              <div style={{ marginBottom: 14 }}>
-                <label>👤 Full Name</label>
-                <input placeholder="Marco Rossi" value={signup.name} onChange={e => setSignup({ ...signup, name: e.target.value })} />
-              </div>
-              <div style={{ marginBottom: 14 }}>
-                <label>📧 Email Address</label>
-                <input type="email" placeholder="marco@bellapasta.lu" value={signup.email} onChange={e => setSignup({ ...signup, email: e.target.value })} />
-              </div>
-              <div style={{ marginBottom: 20 }}>
-                <label>🔒 Password</label>
-                <input type="password" placeholder="At least 8 characters" value={signup.password} onChange={e => setSignup({ ...signup, password: e.target.value })} />
-              </div>
-              <button className="btn btn-p" style={{ width: "100%", padding: 14, fontSize: 15 }}
-                disabled={!signup.name || !signup.email || signup.password.length < 8}
-                onClick={() => setStep(2)}>
-                Continue →
-              </button>
+              <div style={{ marginBottom: 14 }}><label>👤 Full Name</label><input placeholder="Marco Rossi" value={signup.name} onChange={e => setSignup({ ...signup, name: e.target.value })} /></div>
+              <div style={{ marginBottom: 14 }}><label>📧 Email Address</label><input type="email" placeholder="marco@bellapasta.lu" value={signup.email} onChange={e => setSignup({ ...signup, email: e.target.value })} /></div>
+              <div style={{ marginBottom: 20 }}><label>🔒 Password</label><input type="password" placeholder="At least 8 characters" value={signup.password} onChange={e => setSignup({ ...signup, password: e.target.value })} /></div>
+              <button className="btn btn-p" style={{ width: "100%", padding: 14, fontSize: 15 }} disabled={!signup.name || !signup.email || signup.password.length < 8} onClick={() => setStep(2)}>Continue →</button>
             </div>
           )}
-
           {step === 2 && (
             <div>
               <div style={{ background: "var(--accent-soft)", borderRadius: 10, padding: 14, marginBottom: 18 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", marginBottom: 4 }}>🛡️ Secure Payment</div>
                 <div style={{ fontSize: 12, color: "var(--muted)" }}>You won't be charged during your 14-day trial. Cancel anytime before it ends and pay nothing.</div>
               </div>
-              <div style={{ marginBottom: 14 }}>
-                <label>💳 Card Number</label>
-                <input placeholder="4242 4242 4242 4242" value={signup.card}
-                  onChange={e => {
-                    let v = e.target.value.replace(/\D/g, "").slice(0, 16);
-                    v = v.replace(/(\d{4})(?=\d)/g, "$1 ");
-                    setSignup({ ...signup, card: v });
-                  }} />
-              </div>
+              <div style={{ marginBottom: 14 }}><label>💳 Card Number</label><input placeholder="4242 4242 4242 4242" value={signup.card} onChange={e => { let v = e.target.value.replace(/\D/g, "").slice(0, 16); v = v.replace(/(\d{4})(?=\d)/g, "$1 "); setSignup({ ...signup, card: v }); }} /></div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
-                <div>
-                  <label>📅 Expiry</label>
-                  <input placeholder="MM / YY" />
-                </div>
-                <div>
-                  <label>🔐 CVC</label>
-                  <input placeholder="123" />
-                </div>
+                <div><label>📅 Expiry</label><input placeholder="MM / YY" /></div>
+                <div><label>🔐 CVC</label><input placeholder="123" /></div>
               </div>
-              <button className="btn btn-p" style={{ width: "100%", padding: 14, fontSize: 15 }}
-                disabled={signup.card.replace(/\s/g, "").length < 16}
-                onClick={() => { setView("setup"); }}>
-                Start Free Trial →
-              </button>
+              <button className="btn btn-p" style={{ width: "100%", padding: 14, fontSize: 15 }} disabled={signup.card.replace(/\s/g, "").length < 16} onClick={() => { setView("setup"); }}>Start Free Trial →</button>
               <button className="btn btn-g" style={{ width: "100%", marginTop: 8 }} onClick={() => setStep(1)}>← Back</button>
             </div>
           )}
-
-          <div style={{ marginTop: 18, textAlign: "center", fontSize: 11, color: "var(--muted)" }}>
-            🔒 Secured by Stripe · 256-bit encryption · GDPR compliant
-          </div>
+          <div style={{ marginTop: 18, textAlign: "center", fontSize: 11, color: "var(--muted)" }}>🔒 Secured by Stripe · 256-bit encryption · GDPR compliant</div>
         </div>
-
-        <div style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "var(--muted)" }}>
-          Already have an account? <span style={{ color: "var(--accent)", cursor: "pointer", fontWeight: 600 }}>Log in</span>
-        </div>
-        <div style={{ textAlign: "center", marginTop: 8 }}>
-          <button className="btn btn-g" onClick={() => setView("home")} style={{ fontSize: 13 }}>← Back to website</button>
-        </div>
+        <div style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "var(--muted)" }}>Already have an account? <span style={{ color: "var(--accent)", cursor: "pointer", fontWeight: 600 }}>Log in</span></div>
+        <div style={{ textAlign: "center", marginTop: 8 }}><button className="btn btn-g" onClick={() => setView("home")} style={{ fontSize: 13 }}>← Back to website</button></div>
       </div>
     </div>
   );
@@ -413,103 +405,50 @@ CRITICAL RULES:
           <h1 style={{ fontFamily: "var(--display)", fontSize: 26, color: "var(--navy)", marginBottom: 6 }}>Set up your AI assistant ✨</h1>
           <p style={{ color: "var(--muted)", fontSize: 14 }}>This takes about 5 minutes. Your AI will be ready immediately after.</p>
         </div>
-
         <div className="card fu fu1" style={{ padding: 24, marginBottom: 16 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>🏪 Business Information</h3>
-
-          <div style={{ marginBottom: 14 }}>
-            <label>Business Name *</label>
-            <input placeholder="e.g. Bella Pasta" value={setup.bizName} onChange={e => setSetup({ ...setup, bizName: e.target.value })} />
-          </div>
-
-          <div style={{ marginBottom: 14 }}>
-            <label>Business Type *</label>
-            <select value={setup.bizType} onChange={e => setSetup({ ...setup, bizType: e.target.value })} style={{ appearance: "auto" }}>
-              {BUSINESS_TYPES.map(b => <option key={b.value} value={b.value}>{b.label}</option>)}
-            </select>
-          </div>
-
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginBottom: 16 }}>🏪 Business Information</h3>
+          <div style={{ marginBottom: 14 }}><label>Business Name *</label><input placeholder="e.g. Bella Pasta" value={setup.bizName} onChange={e => setSetup({ ...setup, bizName: e.target.value })} /></div>
+          <div style={{ marginBottom: 14 }}><label>Business Type *</label><select value={setup.bizType} onChange={e => setSetup({ ...setup, bizType: e.target.value })} style={{ appearance: "auto" }}>{BUSINESS_TYPES.map(b => <option key={b.value} value={b.value}>{b.label}</option>)}</select></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
-            <div>
-              <label>📍 Address</label>
-              <input placeholder="12 Rue du Fort, Luxembourg" value={setup.address} onChange={e => setSetup({ ...setup, address: e.target.value })} />
-            </div>
-            <div>
-              <label>📞 Phone</label>
-              <input placeholder="+352 26 12 34 56" value={setup.phone} onChange={e => setSetup({ ...setup, phone: e.target.value })} />
-            </div>
+            <div><label>📍 Address</label><input placeholder="12 Rue du Fort, Luxembourg" value={setup.address} onChange={e => setSetup({ ...setup, address: e.target.value })} /></div>
+            <div><label>📞 Phone</label><input placeholder="+352 26 12 34 56" value={setup.phone} onChange={e => setSetup({ ...setup, phone: e.target.value })} /></div>
           </div>
-
-          <div style={{ marginBottom: 14 }}>
-            <label>🌐 Website (optional)</label>
-            <input placeholder="https://www.bellapasta.lu" value={setup.website} onChange={e => setSetup({ ...setup, website: e.target.value })} />
-            <div className="hint">If you have one, we'll help you add the AI chat widget to it.</div>
-          </div>
+          <div style={{ marginBottom: 14 }}><label>🌐 Website (optional)</label><input placeholder="https://www.bellapasta.lu" value={setup.website} onChange={e => setSetup({ ...setup, website: e.target.value })} /><div className="hint">If you have one, we'll help you add the AI chat widget to it.</div></div>
         </div>
-
         <div className="card fu fu2" style={{ padding: 24, marginBottom: 16 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>🌍 Languages</h3>
-          <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>Which languages do your customers speak? Your AI will answer in these languages.</p>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginBottom: 16 }}>🌍 Languages</h3>
+          <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>Which languages do your customers speak?</p>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {[{ k: "fr", f: "🇫🇷", l: "Français" }, { k: "de", f: "🇩🇪", l: "Deutsch" }, { k: "en", f: "🇬🇧", l: "English" }, { k: "lu", f: "🇱🇺", l: "Lëtzebuergesch" }].map(lang => (
               <button key={lang.k} className="btn" onClick={() => setSetup({ ...setup, langs: { ...setup.langs, [lang.k]: !setup.langs[lang.k] } })}
-                style={{ flex: 1, minWidth: 100, padding: "10px 12px", fontSize: 13, background: setup.langs[lang.k] ? "var(--accent-soft)" : "white",
-                  color: setup.langs[lang.k] ? "var(--accent)" : "var(--muted)", border: `1.5px solid ${setup.langs[lang.k] ? "var(--accent)" : "var(--border)"}`, fontWeight: setup.langs[lang.k] ? 700 : 500 }}>
+                style={{ flex: 1, minWidth: 100, padding: "10px 12px", fontSize: 13, background: setup.langs[lang.k] ? "var(--accent-soft)" : "white", color: setup.langs[lang.k] ? "var(--accent)" : "var(--muted)", border: `1.5px solid ${setup.langs[lang.k] ? "var(--accent)" : "var(--border)"}`, fontWeight: setup.langs[lang.k] ? 700 : 500 }}>
                 {lang.f} {lang.l}
               </button>
             ))}
           </div>
         </div>
-
         <div className="card fu fu2" style={{ padding: 24, marginBottom: 16 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>🕐 Opening Hours</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginBottom: 16 }}>🕐 Opening Hours</h3>
           {DAYS.map(day => (
             <div key={day} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
               <div style={{ width: 85, fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{day.slice(0, 3)}</div>
-              <button className="btn" style={{ padding: "4px 10px", fontSize: 11, background: setup.hours[day].closed ? "var(--red-soft)" : "var(--green-soft)",
-                color: setup.hours[day].closed ? "var(--red)" : "var(--green)", border: "none", minWidth: 60 }}
-                onClick={() => setSetup({ ...setup, hours: { ...setup.hours, [day]: { ...setup.hours[day], closed: !setup.hours[day].closed } } })}>
-                {setup.hours[day].closed ? "Closed" : "Open"}
-              </button>
-              {!setup.hours[day].closed && (
-                <>
-                  <input type="time" value={setup.hours[day].open} style={{ width: "auto", padding: "4px 8px", fontSize: 12 }}
-                    onChange={e => setSetup({ ...setup, hours: { ...setup.hours, [day]: { ...setup.hours[day], open: e.target.value } } })} />
-                  <span style={{ fontSize: 12, color: "var(--muted)" }}>to</span>
-                  <input type="time" value={setup.hours[day].close} style={{ width: "auto", padding: "4px 8px", fontSize: 12 }}
-                    onChange={e => setSetup({ ...setup, hours: { ...setup.hours, [day]: { ...setup.hours[day], close: e.target.value } } })} />
-                </>
-              )}
+              <button className="btn" style={{ padding: "4px 10px", fontSize: 11, background: setup.hours[day].closed ? "var(--red-soft)" : "var(--green-soft)", color: setup.hours[day].closed ? "var(--red)" : "var(--green)", border: "none", minWidth: 60 }} onClick={() => setSetup({ ...setup, hours: { ...setup.hours, [day]: { ...setup.hours[day], closed: !setup.hours[day].closed } } })}>{setup.hours[day].closed ? "Closed" : "Open"}</button>
+              {!setup.hours[day].closed && (<><input type="time" value={setup.hours[day].open} style={{ width: "auto", padding: "4px 8px", fontSize: 12 }} onChange={e => setSetup({ ...setup, hours: { ...setup.hours, [day]: { ...setup.hours[day], open: e.target.value } } })} /><span style={{ fontSize: 12, color: "var(--muted)" }}>to</span><input type="time" value={setup.hours[day].close} style={{ width: "auto", padding: "4px 8px", fontSize: 12 }} onChange={e => setSetup({ ...setup, hours: { ...setup.hours, [day]: { ...setup.hours[day], close: e.target.value } } })} /></>)}
             </div>
           ))}
         </div>
-
         <div className="card fu fu3" style={{ padding: 24, marginBottom: 16 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>📝 Tell the AI about your business</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginBottom: 4 }}>📝 Tell the AI about your business</h3>
           <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>The more detail you provide, the better your AI assistant will answer customers.</p>
-
-          {/* Helpful hint box specific to business type */}
           <div style={{ background: "var(--gold-soft)", borderRadius: 10, padding: 14, marginBottom: 14 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: "var(--gold)", marginBottom: 4 }}>💡 What to include for a {selectedType.label}:</div>
             <div style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.5 }}>{selectedType.hints}</div>
           </div>
-
-          <textarea placeholder="Write about your business here..." rows={5} value={setup.description}
-            onChange={e => setSetup({ ...setup, description: e.target.value })}
-            style={{ minHeight: 120 }} />
+          <textarea placeholder="Write about your business here..." rows={5} value={setup.description} onChange={e => setSetup({ ...setup, description: e.target.value })} style={{ minHeight: 120 }} />
           <div className="hint">💡 Tip: Write in the language you think in — the AI will translate for customers automatically.</div>
         </div>
-
-        <button className="btn btn-p fu fu3" style={{ width: "100%", padding: 16, fontSize: 16 }}
-          disabled={!setup.bizName}
-          onClick={() => {
-            setMsgs([{ role: "assistant", content:
-              setup.langs.fr ? `Bonjour ! Je suis l'assistant IA de ${setup.bizName}. Comment puis-je vous aider aujourd'hui ? 😊` :
-              setup.langs.de ? `Hallo! Ich bin der KI-Assistent von ${setup.bizName}. Wie kann ich Ihnen helfen? 😊` :
-              `Hi! I'm the AI assistant for ${setup.bizName}. How can I help you today? 😊`
-            }]);
-            setView("app");
-          }}>
+        <button className="btn btn-p fu fu3" style={{ width: "100%", padding: 16, fontSize: 16 }} disabled={!setup.bizName}
+          onClick={() => { setMsgs([{ role: "assistant", content: setup.langs.fr ? `Bonjour ! Je suis l'assistant IA de ${setup.bizName}. Comment puis-je vous aider aujourd'hui ? 😊` : setup.langs.de ? `Hallo! Ich bin der KI-Assistent von ${setup.bizName}. Wie kann ich Ihnen helfen? 😊` : `Hi! I'm the AI assistant for ${setup.bizName}. How can I help you today? 😊` }]); setView("app"); }}>
           Activate AI Assistant ✨
         </button>
       </div>
@@ -517,7 +456,7 @@ CRITICAL RULES:
   );
 
   // ═══════════════════════════════════
-  //  MAIN APP — CHAT / DOCS / WIDGET / DASHBOARD
+  //  MAIN APP
   // ═══════════════════════════════════
   const tabs = [
     { id: "chat", icon: "💬", label: "Chat" },
@@ -529,8 +468,6 @@ CRITICAL RULES:
   return (
     <div style={{ fontFamily: "var(--font)", background: "var(--bg)", height: "100vh", display: "flex", flexDirection: "column" }}>
       <style>{css}</style>
-
-      {/* Top bar */}
       <div style={{ background: "white", borderBottom: "1px solid var(--border)", padding: "8px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 28, height: 28, borderRadius: 7, background: "linear-gradient(135deg, var(--accent), var(--navy))", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 12, fontWeight: 800, fontFamily: "var(--display)" }}>L</div>
@@ -539,90 +476,54 @@ CRITICAL RULES:
         </div>
         <div style={{ display: "flex", gap: 2 }}>
           {tabs.map(tab => (
-            <button key={tab.id} className="btn" onClick={() => setSection(tab.id)}
-              style={{ padding: "5px 10px", fontSize: 12, background: section === tab.id ? "var(--accent-soft)" : "transparent",
-                color: section === tab.id ? "var(--accent)" : "var(--muted)", border: "none", borderRadius: 8, fontWeight: section === tab.id ? 700 : 500 }}>
+            <button key={tab.id} className="btn" onClick={() => setSection(tab.id)} style={{ padding: "5px 10px", fontSize: 12, background: section === tab.id ? "var(--accent-soft)" : "transparent", color: section === tab.id ? "var(--accent)" : "var(--muted)", border: "none", borderRadius: 8, fontWeight: section === tab.id ? 700 : 500 }}>
               {tab.icon} <span className="hide-m">{tab.label}</span>
             </button>
           ))}
         </div>
       </div>
-
       <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-        {/* ── CHAT ── */}
         {section === "chat" && (
           <>
             <div style={{ flex: 1, overflow: "auto", padding: "14px 14px 6px" }}>
               <div style={{ maxWidth: 580, margin: "0 auto" }}>
-                <div style={{ textAlign: "center", marginBottom: 16, padding: 12, background: "var(--gold-soft)", borderRadius: 10, fontSize: 12, color: "var(--gold)" }}>
-                  💡 This is how your customers will chat with your AI. Try typing in French, German, English, or Luxembourgish!
-                </div>
+                <div style={{ textAlign: "center", marginBottom: 16, padding: 12, background: "var(--gold-soft)", borderRadius: 10, fontSize: 12, color: "var(--gold)" }}>💡 This is how your customers will chat with your AI. Try typing in French, German, English, or Luxembourgish!</div>
                 {msgs.map((m, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 10 }}>
                     {m.role === "assistant" && <div style={{ width: 28, height: 28, borderRadius: 7, background: "var(--accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, marginRight: 8, flexShrink: 0, marginTop: 2 }}>🤖</div>}
-                    <div style={{ maxWidth: "75%", padding: "11px 15px", borderRadius: m.role === "user" ? "14px 14px 3px 14px" : "14px 14px 14px 3px",
-                      background: m.role === "user" ? "var(--accent)" : "white", color: m.role === "user" ? "white" : "var(--text)",
-                      fontSize: 14, lineHeight: 1.55, border: m.role === "user" ? "none" : "1px solid var(--border)", whiteSpace: "pre-wrap" }}>
-                      {m.content}
-                    </div>
+                    <div style={{ maxWidth: "75%", padding: "11px 15px", borderRadius: m.role === "user" ? "14px 14px 3px 14px" : "14px 14px 14px 3px", background: m.role === "user" ? "var(--accent)" : "white", color: m.role === "user" ? "white" : "var(--text)", fontSize: 14, lineHeight: 1.55, border: m.role === "user" ? "none" : "1px solid var(--border)", whiteSpace: "pre-wrap" }}>{m.content}</div>
                   </div>
                 ))}
-                {loading && (
-                  <div style={{ display: "flex", marginBottom: 10 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 7, background: "var(--accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, marginRight: 8 }}>🤖</div>
-                    <div style={{ padding: "14px 18px", borderRadius: "14px 14px 14px 3px", background: "white", border: "1px solid var(--border)", display: "flex", gap: 5 }}>
-                      <span className="dot" /><span className="dot" /><span className="dot" />
-                    </div>
-                  </div>
-                )}
+                {loading && (<div style={{ display: "flex", marginBottom: 10 }}><div style={{ width: 28, height: 28, borderRadius: 7, background: "var(--accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, marginRight: 8 }}>🤖</div><div style={{ padding: "14px 18px", borderRadius: "14px 14px 14px 3px", background: "white", border: "1px solid var(--border)", display: "flex", gap: 5 }}><span className="dot" /><span className="dot" /><span className="dot" /></div></div>)}
                 <div ref={chatEnd} />
               </div>
             </div>
             <div style={{ padding: "8px 14px 12px", background: "white", borderTop: "1px solid var(--border)", flexShrink: 0 }}>
               <div style={{ maxWidth: 580, margin: "0 auto", display: "flex", gap: 8 }}>
-                <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && sendMsg()}
-                  placeholder="Type a message in any language..."
-                  style={{ flex: 1, padding: "11px 14px", borderRadius: 10, border: "2px solid var(--border)", outline: "none", transition: "border .2s" }}
-                  onFocus={e => e.target.style.borderColor = "var(--accent)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
+                <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && sendMsg()} placeholder="Type a message in any language..." style={{ flex: 1, padding: "11px 14px", borderRadius: 10, border: "2px solid var(--border)", outline: "none", transition: "border .2s" }} onFocus={e => e.target.style.borderColor = "var(--accent)"} onBlur={e => e.target.style.borderColor = "var(--border)"} />
                 <button className="btn btn-p" onClick={sendMsg} disabled={loading || !input.trim()} style={{ padding: "11px 18px" }}>Send</button>
               </div>
-              <div style={{ maxWidth: 580, margin: "5px auto 0", textAlign: "center", fontSize: 11, color: "var(--muted)" }}>
-                Try: "Bonjour, une table pour 2 ce soir ?" · "Moien, sidd dir op?" · "Was kostet ein Termin?"
-              </div>
+              <div style={{ maxWidth: 580, margin: "5px auto 0", textAlign: "center", fontSize: 11, color: "var(--muted)" }}>Try: "Bonjour, une table pour 2 ce soir ?" · "Moien, sidd dir op?" · "Was kostet ein Termin?"</div>
             </div>
           </>
         )}
-
-        {/* ── DOCUMENTS ── */}
         {section === "docs" && (
           <div style={{ flex: 1, overflow: "auto", padding: "18px 14px" }}>
             <div style={{ maxWidth: 560, margin: "0 auto" }}>
               <h3 style={{ fontFamily: "var(--display)", fontSize: 20, color: "var(--navy)", marginBottom: 14 }}>📄 Generate Documents</h3>
               <div className="card" style={{ padding: 20, marginBottom: 14 }}>
                 <label>Document Type</label>
-                <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-                  {[{ id: "invoice", l: "🧾 Invoice" }, { id: "quote", l: "📋 Quote" }, { id: "email", l: "✉️ Email" }].map(d => (
-                    <button key={d.id} className={`btn ${docType === d.id ? "btn-p" : "btn-o"}`} onClick={() => setDocType(d.id)} style={{ flex: 1, fontSize: 13, padding: "9px 10px" }}>{d.l}</button>
-                  ))}
-                </div>
+                <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>{[{ id: "invoice", l: "🧾 Invoice" }, { id: "quote", l: "📋 Quote" }, { id: "email", l: "✉️ Email" }].map(d => (<button key={d.id} className={`btn ${docType === d.id ? "btn-p" : "btn-o"}`} onClick={() => setDocType(d.id)} style={{ flex: 1, fontSize: 13, padding: "9px 10px" }}>{d.l}</button>))}</div>
                 <label>Language</label>
-                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                  {[{ c: "fr", f: "🇫🇷" }, { c: "de", f: "🇩🇪" }, { c: "en", f: "🇬🇧" }, { c: "lu", f: "🇱🇺" }].map(l => (
-                    <button key={l.c} className={`btn ${docLang === l.c ? "btn-p" : "btn-o"}`} onClick={() => setDocLang(l.c)} style={{ flex: 1, fontSize: 15, padding: "9px 8px" }}>{l.f}</button>
-                  ))}
-                </div>
-                <button className="btn btn-p" style={{ width: "100%", padding: 13, fontSize: 15 }} onClick={genDoc} disabled={docLoading}>
-                  {docLoading ? "Generating..." : "Generate →"}
-                </button>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{[{ c: "fr", f: "🇫🇷" }, { c: "de", f: "🇩🇪" }, { c: "en", f: "🇬🇧" }, { c: "lu", f: "🇱🇺" }].map(l => (<button key={l.c} className={`btn ${docLang === l.c ? "btn-p" : "btn-o"}`} onClick={() => setDocLang(l.c)} style={{ flex: 1, fontSize: 15, padding: "9px 8px" }}>{l.f}</button>))}</div>
+                <button className="btn btn-p" style={{ width: "100%", padding: 13, fontSize: 15 }} onClick={genDoc} disabled={docLoading}>{docLoading ? "Generating..." : "Generate →"}</button>
               </div>
               {docLoading && <div style={{ textAlign: "center", padding: 28 }}><span className="dot" style={{ marginRight: 5 }} /><span className="dot" style={{ marginRight: 5 }} /><span className="dot" /></div>}
               {docResult && !docLoading && (
                 <div className="card" style={{ overflow: "hidden" }}>
                   <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: "var(--navy)" }}>✅ Document Ready</span>
-                    <button className="btn" style={{ padding: "4px 12px", fontSize: 12, background: "var(--accent-soft)", color: "var(--accent)", border: "none" }}
-                      onClick={() => copyText(docResult, "doc")}>{copied === "doc" ? "Copied! ✓" : "Copy"}</button>
+                    <button className="btn" style={{ padding: "4px 12px", fontSize: 12, background: "var(--accent-soft)", color: "var(--accent)", border: "none" }} onClick={() => copyText(docResult, "doc")}>{copied === "doc" ? "Copied! ✓" : "Copy"}</button>
                   </div>
                   <pre style={{ padding: 16, margin: 0, fontSize: 12, lineHeight: 1.6, whiteSpace: "pre-wrap", fontFamily: "'DM Sans',monospace", background: "var(--bg)", maxHeight: 320, overflow: "auto" }}>{docResult}</pre>
                 </div>
@@ -630,122 +531,51 @@ CRITICAL RULES:
             </div>
           </div>
         )}
-
-        {/* ── WIDGET / INSTALL ── */}
         {section === "widget" && (
           <div style={{ flex: 1, overflow: "auto", padding: "18px 14px" }}>
             <div style={{ maxWidth: 560, margin: "0 auto" }}>
               <h3 style={{ fontFamily: "var(--display)", fontSize: 20, color: "var(--navy)", marginBottom: 4 }}>🔌 Add AI Chat to Your Business</h3>
               <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 18 }}>Choose how your customers will reach your AI assistant.</p>
-
-              {/* Option 1: Website Widget */}
               <div className="card" style={{ padding: 20, marginBottom: 14 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🌐</div>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--navy)" }}>Website Chat Widget</div>
-                    <div style={{ fontSize: 12, color: "var(--muted)" }}>Add a chat bubble to your existing website</div>
-                  </div>
-                  <span className="tag tag-g" style={{ marginLeft: "auto" }}>Ready</span>
-                </div>
-                <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>Copy this code and paste it before the {"</body>"} tag on your website. The chat bubble will appear in the bottom-right corner.</p>
-                <div style={{ background: "var(--bg)", borderRadius: 8, padding: 12, fontFamily: "monospace", fontSize: 12, color: "var(--text)", position: "relative", border: "1px solid var(--border)" }}>
-                  {`<script src="https://luxreplier.lu/widget/${widgetId}.js"></script>`}
-                  <button className="btn" style={{ position: "absolute", top: 6, right: 6, padding: "3px 10px", fontSize: 11, background: "var(--accent-soft)", color: "var(--accent)", border: "none" }}
-                    onClick={() => copyText(`<script src="https://luxreplier.lu/widget/${widgetId}.js"></script>`, "widget")}>
-                    {copied === "widget" ? "Copied! ✓" : "Copy"}
-                  </button>
-                </div>
-                <div className="hint" style={{ marginTop: 8 }}>💡 Works with any website — WordPress, Wix, Squarespace, custom HTML, etc.</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}><div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🌐</div><div><div style={{ fontSize: 14, fontWeight: 700, color: "var(--navy)" }}>Website Chat Widget</div><div style={{ fontSize: 12, color: "var(--muted)" }}>Add a chat bubble to your existing website</div></div><span className="tag tag-g" style={{ marginLeft: "auto" }}>Ready</span></div>
+                <div style={{ background: "var(--bg)", borderRadius: 8, padding: 12, fontFamily: "monospace", fontSize: 12, color: "var(--text)", position: "relative", border: "1px solid var(--border)" }}>{`<script src="https://luxreplier.lu/widget/${widgetId}.js"></script>`}<button className="btn" style={{ position: "absolute", top: 6, right: 6, padding: "3px 10px", fontSize: 11, background: "var(--accent-soft)", color: "var(--accent)", border: "none" }} onClick={() => copyText(`<script src="https://luxreplier.lu/widget/${widgetId}.js"></script>`, "widget")}>{copied === "widget" ? "Copied! ✓" : "Copy"}</button></div>
               </div>
-
-              {/* Option 2: Direct Link */}
               <div className="card" style={{ padding: 20, marginBottom: 14 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--green-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🔗</div>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--navy)" }}>Direct Chat Link</div>
-                    <div style={{ fontSize: 12, color: "var(--muted)" }}>Share a link — no website needed</div>
-                  </div>
-                  <span className="tag tag-g" style={{ marginLeft: "auto" }}>Ready</span>
-                </div>
-                <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>Share this link on social media, business cards, Google Maps, or anywhere. Customers click it and start chatting instantly.</p>
-                <div style={{ background: "var(--bg)", borderRadius: 8, padding: 12, fontFamily: "monospace", fontSize: 13, color: "var(--accent)", position: "relative", border: "1px solid var(--border)" }}>
-                  {`https://chat.luxreplier.lu/${widgetId}`}
-                  <button className="btn" style={{ position: "absolute", top: 6, right: 6, padding: "3px 10px", fontSize: 11, background: "var(--accent-soft)", color: "var(--accent)", border: "none" }}
-                    onClick={() => copyText(`https://chat.luxreplier.lu/${widgetId}`, "link")}>
-                    {copied === "link" ? "Copied! ✓" : "Copy"}
-                  </button>
-                </div>
-                <div className="hint" style={{ marginTop: 8 }}>📱 Perfect for businesses without a website. Share via SMS, email, or print on materials.</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}><div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--green-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🔗</div><div><div style={{ fontSize: 14, fontWeight: 700, color: "var(--navy)" }}>Direct Chat Link</div><div style={{ fontSize: 12, color: "var(--muted)" }}>Share a link — no website needed</div></div><span className="tag tag-g" style={{ marginLeft: "auto" }}>Ready</span></div>
+                <div style={{ background: "var(--bg)", borderRadius: 8, padding: 12, fontFamily: "monospace", fontSize: 13, color: "var(--accent)", position: "relative", border: "1px solid var(--border)" }}>{`https://chat.luxreplier.lu/${widgetId}`}<button className="btn" style={{ position: "absolute", top: 6, right: 6, padding: "3px 10px", fontSize: 11, background: "var(--accent-soft)", color: "var(--accent)", border: "none" }} onClick={() => copyText(`https://chat.luxreplier.lu/${widgetId}`, "link")}>{copied === "link" ? "Copied! ✓" : "Copy"}</button></div>
               </div>
             </div>
           </div>
         )}
-
-        {/* ── DASHBOARD ── */}
         {section === "dash" && (
           <div style={{ flex: 1, overflow: "auto", padding: "18px 14px" }}>
             <div style={{ maxWidth: 580, margin: "0 auto" }}>
               <h3 style={{ fontFamily: "var(--display)", fontSize: 20, color: "var(--navy)", marginBottom: 14 }}>📊 Dashboard</h3>
-
-              {/* Key stats */}
               <div className="m-2col" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 14 }}>
-                {[
-                  { icon: "💬", l: "Chats Today", v: "12", c: "↑ 3 more than yesterday", color: "var(--accent)" },
-                  { icon: "📄", l: "Docs Created", v: "8", c: "↑ 2 more than yesterday", color: "var(--green)" },
-                  { icon: "🌍", l: "Languages Used", v: "3", c: "🇫🇷 🇩🇪 🇬🇧", color: "var(--gold)" },
-                  { icon: "⚡", l: "Avg Response", v: "<3s", c: "Faster than 95% of businesses", color: "var(--accent)" },
-                ].map((s, i) => (
+                {[{ icon: "💬", l: "Chats Today", v: "12", c: "↑ 3 more than yesterday" }, { icon: "📄", l: "Docs Created", v: "8", c: "↑ 2 more than yesterday" }, { icon: "🌍", l: "Languages Used", v: "3", c: "🇫🇷 🇩🇪 🇬🇧" }, { icon: "⚡", l: "Avg Response", v: "<3s", c: "Faster than 95%" }].map((s, i) => (
                   <div key={i} className="card" style={{ padding: "14px 12px" }}>
-                    <div style={{ fontSize: 10, color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".04em", display: "flex", alignItems: "center", gap: 4 }}>{s.icon} {s.l}</div>
+                    <div style={{ fontSize: 10, color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".04em" }}>{s.icon} {s.l}</div>
                     <div style={{ fontSize: 26, fontWeight: 800, color: "var(--navy)", fontFamily: "var(--display)", margin: "4px 0 2px" }}>{s.v}</div>
                     <div style={{ fontSize: 10, color: "var(--green)", fontWeight: 600 }}>{s.c}</div>
                   </div>
                 ))}
               </div>
-
-              {/* Reservation summary */}
               <div className="card" style={{ marginBottom: 14, overflow: "hidden" }}>
-                <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <h4 style={{ fontSize: 14, fontWeight: 700, color: "var(--navy)", margin: 0 }}>📅 Today's Reservations</h4>
-                  <span className="tag tag-g">3 bookings</span>
-                </div>
-                {[
-                  { time: "12:30", name: "Pierre Dupont", people: 2, lang: "🇫🇷", status: "✅ Confirmed" },
-                  { time: "19:00", name: "Hans Weber", people: 4, lang: "🇩🇪", status: "✅ Confirmed" },
-                  { time: "20:30", name: "Sarah Johnson", people: 3, lang: "🇬🇧", status: "🕐 Pending" },
-                ].map((r, i) => (
+                <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}><h4 style={{ fontSize: 14, fontWeight: 700, color: "var(--navy)", margin: 0 }}>📅 Today's Reservations</h4><span className="tag tag-g">3 bookings</span></div>
+                {[{ time: "12:30", name: "Pierre Dupont", people: 2, lang: "🇫🇷", status: "✅ Confirmed" }, { time: "19:00", name: "Hans Weber", people: 4, lang: "🇩🇪", status: "✅ Confirmed" }, { time: "20:30", name: "Sarah Johnson", people: 3, lang: "🇬🇧", status: "🕐 Pending" }].map((r, i) => (
                   <div key={i} style={{ padding: "10px 16px", borderBottom: i < 2 ? "1px solid var(--border)" : "none", display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ background: "var(--accent-soft)", borderRadius: 8, padding: "6px 10px", fontSize: 13, fontWeight: 700, color: "var(--accent)", minWidth: 50, textAlign: "center" }}>{r.time}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{r.name}</div>
-                      <div style={{ fontSize: 11, color: "var(--muted)" }}>{r.people} people · {r.lang}</div>
-                    </div>
+                    <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{r.name}</div><div style={{ fontSize: 11, color: "var(--muted)" }}>{r.people} people · {r.lang}</div></div>
                     <div style={{ fontSize: 12 }}>{r.status}</div>
                   </div>
                 ))}
               </div>
-
-              {/* Recent activity */}
               <div className="card" style={{ overflow: "hidden" }}>
-                <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
-                  <h4 style={{ fontSize: 14, fontWeight: 700, color: "var(--navy)", margin: 0 }}>📋 Recent Activity</h4>
-                </div>
-                {[
-                  { t: "2 min ago", icon: "💬", e: "Customer inquiry answered", l: "🇫🇷 French", s: "✅" },
-                  { t: "15 min ago", icon: "📅", e: "Reservation confirmed — Pierre, 2 people, 12:30", l: "🇫🇷 French", s: "✅" },
-                  { t: "45 min ago", icon: "📄", e: "Invoice #2026-0041 generated", l: "🇩🇪 German", s: "✅" },
-                  { t: "1h ago", icon: "💬", e: "Menu questions answered (3 messages)", l: "🇬🇧 English", s: "✅" },
-                  { t: "2h ago", icon: "📍", e: "Directions & parking info provided", l: "🇱🇺 Lëtzeb.", s: "✅" },
-                  { t: "3h ago", icon: "📋", e: "Quote for private event sent", l: "🇫🇷 French", s: "✅" },
-                ].map((a, i) => (
+                <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)" }}><h4 style={{ fontSize: 14, fontWeight: 700, color: "var(--navy)", margin: 0 }}>📋 Recent Activity</h4></div>
+                {[{ t: "2 min ago", icon: "💬", e: "Customer inquiry answered", l: "🇫🇷 French", s: "✅" }, { t: "15 min ago", icon: "📅", e: "Reservation confirmed — Pierre, 2 people, 12:30", l: "🇫🇷 French", s: "✅" }, { t: "45 min ago", icon: "📄", e: "Invoice #2026-0041 generated", l: "🇩🇪 German", s: "✅" }, { t: "1h ago", icon: "💬", e: "Menu questions answered (3 messages)", l: "🇬🇧 English", s: "✅" }, { t: "2h ago", icon: "📍", e: "Directions & parking info provided", l: "🇱🇺 Lëtzeb.", s: "✅" }, { t: "3h ago", icon: "📋", e: "Quote for private event sent", l: "🇫🇷 French", s: "✅" }].map((a, i) => (
                   <div key={i} style={{ padding: "10px 16px", borderBottom: i < 5 ? "1px solid var(--border)" : "none", display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ fontSize: 16 }}>{a.icon}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{a.e}</div>
-                      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 1 }}>{a.t} · {a.l}</div>
-                    </div>
+                    <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{a.e}</div><div style={{ fontSize: 11, color: "var(--muted)", marginTop: 1 }}>{a.t} · {a.l}</div></div>
                     <div style={{ fontSize: 13 }}>{a.s}</div>
                   </div>
                 ))}
