@@ -69,9 +69,16 @@ const BUSINESS_TYPES = [
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const STRIPE_LINKS = {
-  starter: "https://buy.stripe.com/test_14A8wRaWU2YndR02tr9fW03",
-  business: "https://buy.stripe.com/test_dRmfZjfdacyXdR03xv9fW04",
-  premium: "https://buy.stripe.com/test_3cI00l3usaqP6oygkh9fW05",
+  starter: "https://buy.stripe.com/eVq3cubrqaAPadJgVg0Ny06",
+  business: "https://buy.stripe.com/fZu7sKcvuaAPclR34q0Ny07",
+  premium: "https://buy.stripe.com/8x2fZg1QQ24jetZ0Wi0Ny08",
+};
+
+// ── Plan limits ───────────────────────────────────────────
+const PLAN_CONFIG = {
+  starter:  { label: "Starter",  price: 99,  maxDocs: 50,  maxLangs: 1,  widget: false, multiLocation: false, apiAccess: false },
+  business: { label: "Business", price: 199, maxDocs: null, maxLangs: 4, widget: true,  multiLocation: false, apiAccess: false },
+  premium:  { label: "Premium",  price: 299, maxDocs: null, maxLangs: 4, widget: true,  multiLocation: true,  apiAccess: true  },
 };
 
 export default function LuxReplier() {
@@ -80,6 +87,7 @@ export default function LuxReplier() {
   const [section, setSection] = useState("chat");
   const [lang, setLang] = useState("en");
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [userPlan, setUserPlan] = useState("business"); // set when user clicks a plan
 
   const [signup, setSignup] = useState({ name: "", email: "", password: "", card: "" });
 
@@ -320,7 +328,7 @@ CRITICAL RULES:
               <div style={{ marginBottom: 4 }}><span style={{ fontSize: 40, fontWeight: 800, color: "var(--navy)", fontFamily: "var(--display)" }}>€{p.p}</span><span style={{ fontSize: 14, color: "var(--muted)" }}>/mo</span></div>
               {p.label ? <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600, marginBottom: 18 }}>{p.label}</div> : <div style={{ marginBottom: 18 }} />}
               {p.f.map((f, j) => (<div key={j} style={{ fontSize: 13, padding: "5px 0", display: "flex", gap: 8 }}><span style={{ color: "var(--green)" }}>✓</span>{f}</div>))}
-              <button className={`btn ${p.pop ? "btn-p" : "btn-o"}`} style={{ width: "100%", marginTop: 18 }} onClick={() => window.open(p.link, "_blank")}>{tx.cta}</button>
+              <button className={`btn ${p.pop ? "btn-p" : "btn-o"}`} style={{ width: "100%", marginTop: 18 }} onClick={() => { setUserPlan(p.n.toLowerCase()); window.open(p.link, "_blank"); }}>{tx.cta}</button>
             </div>
           ))}
         </div>
@@ -422,14 +430,24 @@ CRITICAL RULES:
         </div>
         <div className="card fu fu2" style={{ padding: 24, marginBottom: 16 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginBottom: 16 }}>🌍 Languages</h3>
-          <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>Which languages do your customers speak?</p>
+          <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>Which languages do your customers speak?{plan.maxLangs === 1 && <span style={{ color: "var(--red)", fontWeight: 700 }}> Starter plan: 1 language only. <span style={{ cursor: "pointer", textDecoration: "underline" }} onClick={() => window.open(STRIPE_LINKS.business, "_blank")}>Upgrade for all 4.</span></span>}</p>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {[{ k: "fr", f: "🇫🇷", l: "Français" }, { k: "de", f: "🇩🇪", l: "Deutsch" }, { k: "en", f: "🇬🇧", l: "English" }, { k: "lu", f: "🇱🇺", l: "Lëtzebuergesch" }].map(lang => (
-              <button key={lang.k} className="btn" onClick={() => setSetup({ ...setup, langs: { ...setup.langs, [lang.k]: !setup.langs[lang.k] } })}
-                style={{ flex: 1, minWidth: 100, padding: "10px 12px", fontSize: 13, background: setup.langs[lang.k] ? "var(--accent-soft)" : "white", color: setup.langs[lang.k] ? "var(--accent)" : "var(--muted)", border: `1.5px solid ${setup.langs[lang.k] ? "var(--accent)" : "var(--border)"}`, fontWeight: setup.langs[lang.k] ? 700 : 500 }}>
-                {lang.f} {lang.l}
-              </button>
-            ))}
+            {[{ k: "fr", f: "🇫🇷", l: "Français" }, { k: "de", f: "🇩🇪", l: "Deutsch" }, { k: "en", f: "🇬🇧", l: "English" }, { k: "lu", f: "🇱🇺", l: "Lëtzebuergesch" }].map((lng, idx) => {
+              const activeLangCount = Object.values(setup.langs).filter(Boolean).length;
+              const isLocked = plan.maxLangs === 1 && !setup.langs[lng.k] && activeLangCount >= 1;
+              return (
+                <button key={lng.k} className="btn"
+                  onClick={() => { if (isLocked) { window.open(STRIPE_LINKS.business, "_blank"); return; } setSetup({ ...setup, langs: { ...setup.langs, [lng.k]: !setup.langs[lng.k] } }); }}
+                  style={{ flex: 1, minWidth: 100, padding: "10px 12px", fontSize: 13,
+                    background: setup.langs[lng.k] ? "var(--accent-soft)" : isLocked ? "var(--bg)" : "white",
+                    color: setup.langs[lng.k] ? "var(--accent)" : isLocked ? "var(--border)" : "var(--muted)",
+                    border: `1.5px solid ${setup.langs[lng.k] ? "var(--accent)" : isLocked ? "var(--border)" : "var(--border)"}`,
+                    fontWeight: setup.langs[lng.k] ? 700 : 500,
+                    cursor: isLocked ? "not-allowed" : "pointer" }}>
+                  {lng.f} {lng.l}{isLocked ? " 🔒" : ""}
+                </button>
+              );
+            })}
           </div>
         </div>
         <div className="card fu fu2" style={{ padding: 24, marginBottom: 16 }}>
@@ -463,10 +481,36 @@ CRITICAL RULES:
   // ═══════════════════════════════════
   //  MAIN APP
   // ═══════════════════════════════════
+  const plan = PLAN_CONFIG[userPlan] || PLAN_CONFIG.business;
+  const [docCount, setDocCount] = useState(0);
+
+  // ── Plan lock helper ─────────────────────────────────────
+  const PlanLock = ({ feature, requiredPlan, children }) => {
+    const locked = (feature === "widget" && !plan.widget) ||
+                   (feature === "multiLocation" && !plan.multiLocation) ||
+                   (feature === "apiAccess" && !plan.apiAccess);
+    if (!locked) return children;
+    return (
+      <div style={{ textAlign: "center", padding: "48px 24px" }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
+        <h3 style={{ fontFamily: "var(--display)", fontSize: 18, color: "var(--navy)", marginBottom: 8 }}>
+          {requiredPlan} Plan Required
+        </h3>
+        <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 20 }}>
+          This feature is not included in your <strong>{plan.label}</strong> plan.
+          Upgrade to unlock it.
+        </p>
+        <button className="btn btn-p" onClick={() => window.open(STRIPE_LINKS[requiredPlan.toLowerCase()], "_blank")}>
+          Upgrade to {requiredPlan} →
+        </button>
+      </div>
+    );
+  };
+
   const tabs = [
     { id: "chat", icon: "💬", label: "Chat" },
     { id: "docs", icon: "📄", label: "Documents" },
-    { id: "widget", icon: "🔌", label: "Install" },
+    { id: "widget", icon: "🔌", label: "Install", locked: !plan.widget },
     { id: "dash", icon: "📊", label: "Dashboard" },
   ];
 
@@ -478,11 +522,17 @@ CRITICAL RULES:
           <div style={{ width: 28, height: 28, borderRadius: 7, background: "linear-gradient(135deg, var(--accent), var(--navy))", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 12, fontWeight: 800, fontFamily: "var(--display)" }}>L</div>
           <span style={{ fontWeight: 700, fontSize: 15, color: "var(--navy)" }}>{setup.bizName || "LuxReplier"}</span>
           <span className="tag tag-g" style={{ fontSize: 10 }}>🟢 Active</span>
+          <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 6, background: "var(--accent-soft)", color: "var(--accent)", fontWeight: 700 }}>{plan.label}</span>
         </div>
         <div style={{ display: "flex", gap: 2 }}>
           {tabs.map(tab => (
-            <button key={tab.id} className="btn" onClick={() => setSection(tab.id)} style={{ padding: "5px 10px", fontSize: 12, background: section === tab.id ? "var(--accent-soft)" : "transparent", color: section === tab.id ? "var(--accent)" : "var(--muted)", border: "none", borderRadius: 8, fontWeight: section === tab.id ? 700 : 500 }}>
+            <button key={tab.id} className="btn" onClick={() => setSection(tab.id)}
+              style={{ padding: "5px 10px", fontSize: 12, background: section === tab.id ? "var(--accent-soft)" : "transparent",
+                color: section === tab.id ? "var(--accent)" : tab.locked ? "var(--border)" : "var(--muted)",
+                border: "none", borderRadius: 8, fontWeight: section === tab.id ? 700 : 500,
+                position: "relative" }}>
               {tab.icon} <span className="hide-m">{tab.label}</span>
+              {tab.locked && <span style={{ fontSize: 9, marginLeft: 2 }}>🔒</span>}
             </button>
           ))}
         </div>
@@ -521,7 +571,17 @@ CRITICAL RULES:
                 <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>{[{ id: "invoice", l: "🧾 Invoice" }, { id: "quote", l: "📋 Quote" }, { id: "email", l: "✉️ Email" }].map(d => (<button key={d.id} className={`btn ${docType === d.id ? "btn-p" : "btn-o"}`} onClick={() => setDocType(d.id)} style={{ flex: 1, fontSize: 13, padding: "9px 10px" }}>{d.l}</button>))}</div>
                 <label>Language</label>
                 <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{[{ c: "fr", f: "🇫🇷" }, { c: "de", f: "🇩🇪" }, { c: "en", f: "🇬🇧" }, { c: "lu", f: "🇱🇺" }].map(l => (<button key={l.c} className={`btn ${docLang === l.c ? "btn-p" : "btn-o"}`} onClick={() => setDocLang(l.c)} style={{ flex: 1, fontSize: 15, padding: "9px 8px" }}>{l.f}</button>))}</div>
-                <button className="btn btn-p" style={{ width: "100%", padding: 13, fontSize: 15 }} onClick={genDoc} disabled={docLoading}>{docLoading ? "Generating..." : "Generate →"}</button>
+                {plan.maxDocs && docCount >= plan.maxDocs ? (
+                  <div style={{ background: "var(--red-soft)", borderRadius: 10, padding: 14, textAlign: "center" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--red)", marginBottom: 6 }}>
+                      📄 Document limit reached ({plan.maxDocs}/mo)
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>Upgrade to Business for unlimited documents.</div>
+                    <button className="btn btn-p" style={{ fontSize: 13 }} onClick={() => window.open(STRIPE_LINKS.business, "_blank")}>Upgrade to Business →</button>
+                  </div>
+                ) : (
+                  <button className="btn btn-p" style={{ width: "100%", padding: 13, fontSize: 15 }} onClick={() => { genDoc(); if(plan.maxDocs) setDocCount(c => c+1); }} disabled={docLoading}>{docLoading ? "Generating..." : `Generate → ${plan.maxDocs ? `(${docCount}/${plan.maxDocs})` : "Unlimited"}`}</button>
+                )}
               </div>
               {docLoading && <div style={{ textAlign: "center", padding: 28 }}><span className="dot" style={{ marginRight: 5 }} /><span className="dot" style={{ marginRight: 5 }} /><span className="dot" /></div>}
               {docResult && !docLoading && (
@@ -539,6 +599,7 @@ CRITICAL RULES:
         {section === "widget" && (
           <div style={{ flex: 1, overflow: "auto", padding: "18px 14px" }}>
             <div style={{ maxWidth: 560, margin: "0 auto" }}>
+              <PlanLock feature="widget" requiredPlan="Business">
               <h3 style={{ fontFamily: "var(--display)", fontSize: 20, color: "var(--navy)", marginBottom: 4 }}>🔌 Add AI Chat to Your Business</h3>
               <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 18 }}>Choose how your customers will reach your AI assistant.</p>
               <div className="card" style={{ padding: 20, marginBottom: 14 }}>
@@ -550,6 +611,7 @@ CRITICAL RULES:
                 <div style={{ background: "var(--bg)", borderRadius: 8, padding: 12, fontFamily: "monospace", fontSize: 13, color: "var(--accent)", position: "relative", border: "1px solid var(--border)" }}>{`https://chat.luxreplier.lu/${widgetId}`}<button className="btn" style={{ position: "absolute", top: 6, right: 6, padding: "3px 10px", fontSize: 11, background: "var(--accent-soft)", color: "var(--accent)", border: "none" }} onClick={() => copyText(`https://chat.luxreplier.lu/${widgetId}`, "link")}>{copied === "link" ? "Copied! ✓" : "Copy"}</button></div>
               </div>
             </div>
+            </PlanLock>
           </div>
         )}
         {section === "dash" && (
