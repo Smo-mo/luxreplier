@@ -610,8 +610,8 @@ CRITICAL RULES:
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}><div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--green-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🔗</div><div><div style={{ fontSize: 14, fontWeight: 700, color: "var(--navy)" }}>Direct Chat Link</div><div style={{ fontSize: 12, color: "var(--muted)" }}>Share a link — no website needed</div></div><span className="tag tag-g" style={{ marginLeft: "auto" }}>Ready</span></div>
                 <div style={{ background: "var(--bg)", borderRadius: 8, padding: 12, fontFamily: "monospace", fontSize: 13, color: "var(--accent)", position: "relative", border: "1px solid var(--border)" }}>{`https://chat.luxreplier.lu/${widgetId}`}<button className="btn" style={{ position: "absolute", top: 6, right: 6, padding: "3px 10px", fontSize: 11, background: "var(--accent-soft)", color: "var(--accent)", border: "none" }} onClick={() => copyText(`https://chat.luxreplier.lu/${widgetId}`, "link")}>{copied === "link" ? "Copied! ✓" : "Copy"}</button></div>
               </div>
+              </PlanLock>
             </div>
-            </PlanLock>
           </div>
         )}
         {section === "dash" && (
