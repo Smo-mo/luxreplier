@@ -111,6 +111,7 @@ export default function LuxReplier() {
 
   const [copied, setCopied] = useState("");
   const [docCount, setDocCount] = useState(0);
+  const plan = PLAN_CONFIG[userPlan] || PLAN_CONFIG.business;
 
   useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, loading]);
 
@@ -482,8 +483,6 @@ CRITICAL RULES:
   // ═══════════════════════════════════
   //  MAIN APP
   // ═══════════════════════════════════
-  const plan = PLAN_CONFIG[userPlan] || PLAN_CONFIG.business;
-
   // ── Plan lock helper ─────────────────────────────────────
   const PlanLock = ({ feature, requiredPlan, children }) => {
     const locked = (feature === "widget" && !plan.widget) ||
