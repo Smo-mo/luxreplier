@@ -239,12 +239,12 @@ CRITICAL RULES:
   };
   const tx = texts[lang] || texts.en;
   const feats = [
-    { icon: "💬", t: "Smart Customer Chat", d: "AI answers in the customer's language — 24/7 on your website." },
-    { icon: "📄", t: "Instant Documents", d: "Invoices, quotes, and emails in any language with one click." },
-    { icon: "📅", t: "Booking Assistant", d: "Handles reservations, confirmations, and reminders automatically." },
-    { icon: "📊", t: "Business Dashboard", d: "All conversations, bookings, and documents in one place." },
-    { icon: "🔌", t: "Website Widget", d: "One line of code adds AI chat to any website." },
-    { icon: "🔗", t: "Shareable Link", d: "No website? Share a direct chat link anywhere." },
+    { icon: "💬", color: "#EBF0FF", iconBg: "#2D5BFF", t: "Smart Customer Chat", d: "AI replies in the customer's language in under 3 seconds — French, German, English or Luxembourgish. Available 24/7, even at 2am on Sunday.", stat: "< 3s response time", statIcon: "⚡" },
+    { icon: "📄", color: "#EEFBF3", iconBg: "#2EAF65", t: "Instant Documents", d: "Generate professional invoices, quotes and emails in any language with one click. No more 30-minute formatting sessions.", stat: "Save 2h+ per day", statIcon: "⏱️" },
+    { icon: "📅", color: "#FBF5EB", iconBg: "#C5963A", t: "Smart Booking Assistant", d: "AI handles reservations end-to-end — checks availability, confirms bookings, collects customer details and notifies you instantly by email.", stat: "Zero missed bookings", statIcon: "✅" },
+    { icon: "❓", color: "#F3EBFF", iconBg: "#7C3AED", t: "Smart FAQ Memory", d: "Add your 5 most common questions once. Your AI answers them perfectly every time — prices, parking, menu, dietary options and more.", stat: "100% accurate answers", statIcon: "🎯" },
+    { icon: "⭐", color: "#FFF8EB", iconBg: "#F59E0B", t: "Auto Google Reviews", d: "After every interaction, your AI automatically invites satisfied customers to leave a Google review. More 5-star reviews = more new clients.", stat: "More 5★ reviews", statIcon: "📈" },
+    { icon: "🔌", color: "#EBF0FF", iconBg: "#2D5BFF", t: "Website Widget & Link", d: "Add AI chat to your website with one line of code. No website? Share a direct link on Google Maps, Instagram or WhatsApp.", stat: "Works everywhere", statIcon: "🌍" },
   ];
   const plans = [
     { n: "Starter", p: "99", f: ["1 language", "AI customer chat", "50 documents/mo", "Smart FAQ (5 Q&As)", "Email support"], link: STRIPE_LINKS.starter },
@@ -339,17 +339,51 @@ CRITICAL RULES:
       </section>
 
       {/* Features */}
-      <section id="features" style={{ maxWidth: 800, margin: "0 auto", padding: "0 24px 56px" }}>
-        <h2 style={{ fontFamily: "var(--display)", fontSize: 30, fontWeight: 700, color: "var(--navy)", textAlign: "center", marginBottom: 6 }}>{tx.ft}</h2>
-        <p style={{ textAlign: "center", color: "var(--muted)", fontSize: 15, marginBottom: 32 }}>{tx.fs}</p>
-        <div className="m-stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-          {feats.map((f, i) => (
-            <div key={i} className="card" style={{ padding: "22px 20px" }}>
-              <div style={{ fontSize: 28, marginBottom: 10 }}>{f.icon}</div>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginBottom: 6 }}>{f.t}</h3>
-              <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>{f.d}</p>
+      <section id="features" style={{ maxWidth: 860, margin: "0 auto", padding: "0 24px 64px" }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ display: "inline-block", padding: "5px 16px", borderRadius: 20, background: "var(--green-soft)", color: "var(--green)", fontSize: 13, fontWeight: 600, marginBottom: 12 }}>✅ Trusted by Luxembourg businesses</div>
+          <h2 style={{ fontFamily: "var(--display)", fontSize: 32, fontWeight: 700, color: "var(--navy)", marginBottom: 10 }}>{tx.ft}</h2>
+          <p style={{ color: "var(--muted)", fontSize: 16, maxWidth: 520, margin: "0 auto" }}>{tx.fs}</p>
+        </div>
+
+        {/* Trust bar */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 32, flexWrap: "wrap", marginBottom: 48, padding: "20px 24px", background: "white", borderRadius: 14, border: "1px solid var(--border)", boxShadow: "var(--shadow)" }}>
+          {[{ n: "4 Languages", d: "FR · DE · EN · LU", icon: "🌍" }, { n: "< 3 seconds", d: "Average response", icon: "⚡" }, { n: "24/7", d: "Always available", icon: "🕐" }, { n: "14-day trial", d: "No credit card risk", icon: "🛡️" }].map((s, i) => (
+            <div key={i} style={{ textAlign: "center", minWidth: 100 }}>
+              <div style={{ fontSize: 22, marginBottom: 4 }}>{s.icon}</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "var(--navy)" }}>{s.n}</div>
+              <div style={{ fontSize: 12, color: "var(--muted)" }}>{s.d}</div>
             </div>
           ))}
+        </div>
+
+        <div className="m-stack" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          {feats.map((f, i) => (
+            <div key={i} style={{ background: "white", borderRadius: 16, border: "1px solid var(--border)", padding: "24px 22px", boxShadow: "var(--shadow)", transition: "all .2s", position: "relative", overflow: "hidden" }}>
+              {/* Color accent top bar */}
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: f.iconBg, borderRadius: "16px 16px 0 0" }} />
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: f.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{f.icon}</div>
+                <div>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginBottom: 4 }}>{f.t}</h3>
+                  <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6, margin: 0 }}>{f.d}</p>
+                </div>
+              </div>
+              {/* Stat badge */}
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8, background: f.color, fontSize: 11, fontWeight: 700, color: f.iconBg }}>
+                <span>{f.statIcon}</span>{f.stat}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Social proof bar */}
+        <div style={{ marginTop: 40, padding: "24px 28px", background: "linear-gradient(135deg, var(--navy), #2A4470)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "white", marginBottom: 4 }}>🇱🇺 Built specifically for Luxembourg</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>The only AI assistant that speaks all 4 languages of Luxembourg — French, German, English and Lëtzebuergesch.</div>
+          </div>
+          <button className="btn" style={{ background: "white", color: "var(--navy)", fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }} onClick={() => scrollTo("pricing")}>See Pricing →</button>
         </div>
       </section>
 
