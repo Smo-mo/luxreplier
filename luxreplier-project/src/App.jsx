@@ -233,9 +233,9 @@ CRITICAL RULES:
   const scrollTo = id => { document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }); setMobileMenu(false); };
   const langFlags = { en: "🇬🇧", fr: "🇫🇷", de: "🇩🇪" };
   const texts = {
-    en: { badge: "🇱🇺 Made for Luxembourg Small Businesses", h1: ["Your business.", "Every language.", "Zero effort."], sub: "AI that answers your customers in French, German, English & Luxembourgish. Creates invoices, quotes, and emails — automatically.", cta: "Start Free Trial", cta2: "See Features", ft: "Everything your business needs", fs: "Simple AI tools that save you hours every day", pt: "Simple, transparent pricing", ps: "14-day free trial on all plans. No hidden fees.", fin: "Ready to save 15+ hours a week?", fb: "Start Your 14-Day Free Trial" },
-    fr: { badge: "🇱🇺 Conçu pour les PME luxembourgeoises", h1: ["Votre entreprise.", "Toutes les langues.", "Zéro effort."], sub: "L'IA qui répond à vos clients en français, allemand, anglais et luxembourgeois. Factures, devis et emails — automatiquement.", cta: "Essai Gratuit", cta2: "Fonctionnalités", ft: "Tout ce dont votre entreprise a besoin", fs: "Des outils IA simples qui vous font gagner des heures", pt: "Tarifs simples et transparents", ps: "14 jours d'essai gratuit. Sans frais cachés.", fin: "Prêt à gagner 15h+ par semaine ?", fb: "Essai Gratuit de 14 Jours" },
-    de: { badge: "🇱🇺 Für Luxemburger Kleinunternehmen", h1: ["Ihr Geschäft.", "Jede Sprache.", "Null Aufwand."], sub: "KI die Ihren Kunden auf Französisch, Deutsch, Englisch und Luxemburgisch antwortet. Rechnungen und E-Mails — automatisch.", cta: "Kostenlos Testen", cta2: "Funktionen", ft: "Alles was Ihr Unternehmen braucht", fs: "Einfache KI-Tools die Stunden sparen", pt: "Einfache, transparente Preise", ps: "14 Tage kostenlos. Keine versteckten Kosten.", fin: "Bereit, 15+ Stunden pro Woche zu sparen?", fb: "14 Tage Kostenlos Testen" },
+    en: { badge: "🌐 One AI. Every Language. Every Customer.", h1: ["Your business.", "Every language.", "Zero effort."], sub: "AI that answers your customers in French, German, English & Luxembourgish. Creates invoices, quotes, and emails — automatically.", cta: "Start Free Trial", cta2: "See Features", ft: "Everything your business needs", fs: "Simple AI tools that save you hours every day", pt: "Simple, transparent pricing", ps: "14-day free trial on all plans. No hidden fees.", fin: "Ready to save 15+ hours a week?", fb: "Start Your 14-Day Free Trial" },
+    fr: { badge: "🌐 Un seul AI. Chaque langue. Chaque client.", h1: ["Votre entreprise.", "Toutes les langues.", "Zéro effort."], sub: "L'IA qui répond à vos clients en français, allemand, anglais et luxembourgeois. Factures, devis et emails — automatiquement.", cta: "Essai Gratuit", cta2: "Fonctionnalités", ft: "Tout ce dont votre entreprise a besoin", fs: "Des outils IA simples qui vous font gagner des heures", pt: "Tarifs simples et transparents", ps: "14 jours d'essai gratuit. Sans frais cachés.", fin: "Prêt à gagner 15h+ par semaine ?", fb: "Essai Gratuit de 14 Jours" },
+    de: { badge: "🌐 Eine KI. Jede Sprache. Jeder Kunde.", h1: ["Ihr Geschäft.", "Jede Sprache.", "Null Aufwand."], sub: "KI die Ihren Kunden auf Französisch, Deutsch, Englisch und Luxemburgisch antwortet. Rechnungen und E-Mails — automatisch.", cta: "Kostenlos Testen", cta2: "Funktionen", ft: "Alles was Ihr Unternehmen braucht", fs: "Einfache KI-Tools die Stunden sparen", pt: "Einfache, transparente Preise", ps: "14 Tage kostenlos. Keine versteckten Kosten.", fin: "Bereit, 15+ Stunden pro Woche zu sparen?", fb: "14 Tage Kostenlos Testen" },
   };
   const tx = texts[lang] || texts.en;
   const feats = [
@@ -341,7 +341,7 @@ CRITICAL RULES:
       {/* Features */}
       <section id="features" style={{ maxWidth: 860, margin: "0 auto", padding: "0 24px 64px" }}>
         <div style={{ textAlign: "center", marginBottom: 48 }}>
-          <div style={{ display: "inline-block", padding: "5px 16px", borderRadius: 20, background: "var(--green-soft)", color: "var(--green)", fontSize: 13, fontWeight: 600, marginBottom: 12 }}>✅ Trusted by Luxembourg businesses</div>
+          <div style={{ display: "inline-block", padding: "5px 16px", borderRadius: 20, background: "var(--green-soft)", color: "var(--green)", fontSize: 13, fontWeight: 600, marginBottom: 12 }}>✨ Professional AI — Zero Setup Complexity</div>
           <h2 style={{ fontFamily: "var(--display)", fontSize: 32, fontWeight: 700, color: "var(--navy)", marginBottom: 10 }}>{tx.ft}</h2>
           <p style={{ color: "var(--muted)", fontSize: 16, maxWidth: 520, margin: "0 auto" }}>{tx.fs}</p>
         </div>
@@ -380,8 +380,8 @@ CRITICAL RULES:
         {/* Social proof bar */}
         <div style={{ marginTop: 40, padding: "24px 28px", background: "linear-gradient(135deg, var(--navy), #2A4470)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "white", marginBottom: 4 }}>🇱🇺 Built specifically for Luxembourg</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>The only AI assistant that speaks all 4 languages of Luxembourg — French, German, English and Lëtzebuergesch.</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "white", marginBottom: 4 }}>🇱🇺 Built for Multilingual Markets — Starting from Luxembourg</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>Launched in Luxembourg — the heart of multilingual Europe. Built to serve businesses in French, German, English and Lëtzebuergesch, and expanding across borders.</div>
           </div>
           <button className="btn" style={{ background: "white", color: "var(--navy)", fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }} onClick={() => scrollTo("pricing")}>See Pricing →</button>
         </div>
