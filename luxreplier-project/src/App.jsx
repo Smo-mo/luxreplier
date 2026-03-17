@@ -249,7 +249,7 @@ CRITICAL RULES:
   const plans = [
     { n: "Starter", p: "99", f: ["1 language", "AI customer chat", "50 documents/mo", "Smart FAQ (5 Q&As)", "Email support"], link: STRIPE_LINKS.starter },
     { n: "Business", p: "199", f: ["4 languages", "AI chat + documents", "Unlimited documents", "Smart FAQ (5 Q&As)", "📧 Instant booking alerts", "⭐ Auto Google reviews", "Website widget", "Priority support"], pop: true, label: "Best value", link: STRIPE_LINKS.business },
-    { n: "Premium", p: "299", f: ["Everything in Business", "👑 VIP customer recognition", "Custom AI training", "Multi-location", "Dedicated manager", "API access"], link: STRIPE_LINKS.premium },
+    { n: "Premium", p: "299", f: ["Everything in Business +", "👑 VIP: AI remembers every customer by name", "🎯 Custom AI trained on your exact menu/services", "📍 Multi-location (manage all branches in one place)", "📞 Dedicated account manager — real human support", "🔗 API access — connect to any system", "🏆 First to get every new feature"], link: STRIPE_LINKS.premium },
   ];
 
   // ═══════════════════════════════════
@@ -514,14 +514,20 @@ CRITICAL RULES:
           <div style={{ background: "var(--accent-soft)", borderRadius: 8, padding: 10, marginBottom: 14, fontSize: 11, color: "var(--accent)" }}>
             💡 Examples: "What are your prices?", "Do you have parking?", "Is there a terrace?", "Do you accept credit cards?"
           </div>
-          {setup.faqItems.map((item, i) => (
+          {[
+            { qp: "e.g. What are your prices / rates?", ap: "e.g. Our main dishes start from €12. The lunch menu is €15 for 2 courses. We also offer a kids menu at €8." },
+            { qp: "e.g. Do you have parking nearby?", ap: "e.g. Yes! Free parking is available behind our building on Rue du Fort, and there is a public car park 2 minutes away on Avenue de la Gare." },
+            { qp: "e.g. Do you accept walk-ins or only reservations?", ap: "e.g. Both! Walk-ins are welcome but we recommend reserving a table for evenings and weekends as we get very busy." },
+            { qp: "e.g. Do you have a terrace / outdoor seating?", ap: "e.g. Yes, we have a beautiful sunny terrace with 20 seats open from April to October, weather permitting." },
+            { qp: "e.g. Do you cater for dietary needs (vegetarian, vegan, gluten-free)?", ap: "e.g. Absolutely! We have dedicated vegetarian and vegan options on our menu, and our chef can adapt most dishes to be gluten-free on request." },
+          ].map((placeholder, i) => (
             <div key={i} style={{ marginBottom: 12, padding: 12, background: "var(--bg)", borderRadius: 10, border: "1px solid var(--border)" }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Question {i + 1}</div>
-              <input placeholder={`e.g. Do you have vegetarian options?`} value={item.q}
+              <input placeholder={placeholder.qp} value={setup.faqItems[i].q}
                 onChange={e => { const f = [...setup.faqItems]; f[i] = { ...f[i], q: e.target.value }; setSetup({ ...setup, faqItems: f }); }}
                 style={{ marginBottom: 6 }} />
-              <textarea placeholder={`e.g. Yes! We have a full vegetarian menu including pasta, salads and our famous mushroom risotto.`}
-                value={item.a} rows={2}
+              <textarea placeholder={placeholder.ap}
+                value={setup.faqItems[i].a} rows={2}
                 onChange={e => { const f = [...setup.faqItems]; f[i] = { ...f[i], a: e.target.value }; setSetup({ ...setup, faqItems: f }); }}
                 style={{ minHeight: 60, fontSize: 13 }} />
             </div>
