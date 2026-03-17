@@ -146,35 +146,16 @@ export default function LuxReplier() {
     try {
       // Build FAQ string for AI
       const activeFaqs = setup.faqItems.filter(f => f.q.trim() && f.a.trim());
-      const faqStr = activeFaqs.length > 0 ? `
-
-FREQUENTLY ASKED QUESTIONS (answer these precisely):
-${activeFaqs.map((f, i) => `Q${i+1}: ${f.q}
-A${i+1}: ${f.a}`).join("
-")}` : "";
+      const faqStr = activeFaqs.length > 0 ? "\n\nFREQUENTLY ASKED QUESTIONS (answer these precisely):\n" + activeFaqs.map((f, i) => "Q" + (i+1) + ": " + f.q + "\nA" + (i+1) + ": " + f.a).join("\n") : "";
 
       // VIP customers string (Premium)
-      const vipStr = plan.vipRecognition && vipCustomers.length > 0
-        ? `
-
-VIP RETURNING CUSTOMERS (greet them personally if they identify themselves):
-${vipCustomers.map(v => `- ${v.name}: ${v.details}`).join("
-")}`
-        : "";
+      const vipStr = plan.vipRecognition && vipCustomers.length > 0 ? "\n\nVIP RETURNING CUSTOMERS (greet them personally if they identify themselves):\n" + vipCustomers.map(v => "- " + v.name + ": " + v.details).join("\n") : "";
 
       // Google review instruction (Business & Premium)
-      const reviewStr = plan.googleReview && setup.googleReviewLink
-        ? `
-
-9. GOOGLE REVIEW: At the end of every completed reservation or inquiry, always add: "Thank you! We hope to see you soon 😊 We'd love your feedback: ${setup.googleReviewLink}"`
-        : "";
+      const reviewStr = plan.googleReview && setup.googleReviewLink ? "\n\n9. GOOGLE REVIEW: At the end of every completed reservation or inquiry, always add a review invite with the link: " + setup.googleReviewLink : "";
 
       // Booking email instruction (Business & Premium)
-      const bookingEmailStr = plan.bookingEmail && setup.ownerEmail
-        ? `
-
-10. BOOKING CONFIRMATION: When you confirm a reservation, always end your message with exactly this line on its own: "BOOKING_CONFIRMED:[customer name],[people],[date/time],[phone]" — this triggers an automatic email to the owner.`
-        : "";
+      const bookingEmailStr = plan.bookingEmail && setup.ownerEmail ? "\n\n10. BOOKING CONFIRMATION: When you confirm a reservation, always end your message with this exact line: BOOKING_CONFIRMED:[customer name],[number of people],[date and time],[phone number] — this triggers an automatic email to the owner." : "";
 
       const sys = `You are the AI assistant for "${setup.bizName}", a ${selectedType.label} in Luxembourg.
 Address: ${setup.address || "Luxembourg City"}
