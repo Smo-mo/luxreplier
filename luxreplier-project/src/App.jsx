@@ -76,9 +76,9 @@ const STRIPE_LINKS = {
 
 // ── Plan limits ───────────────────────────────────────────
 const PLAN_CONFIG = {
-  starter:  { label: "Starter",  price: 99,  maxDocs: 50,  maxLangs: 1,  widget: false, multiLocation: false, apiAccess: false },
-  business: { label: "Business", price: 199, maxDocs: null, maxLangs: 4, widget: true,  multiLocation: false, apiAccess: false },
-  premium:  { label: "Premium",  price: 299, maxDocs: null, maxLangs: 4, widget: true,  multiLocation: true,  apiAccess: true  },
+  starter:  { label: "Starter",  price: 99,  maxDocs: 50,  maxLangs: 1,  widget: false, multiLocation: false, apiAccess: false, faq: true,  googleReview: false, bookingEmail: false, vipRecognition: false },
+  business: { label: "Business", price: 199, maxDocs: null, maxLangs: 4, widget: true,  multiLocation: false, apiAccess: false, faq: true,  googleReview: true,  bookingEmail: true,  vipRecognition: false },
+  premium:  { label: "Premium",  price: 299, maxDocs: null, maxLangs: 4, widget: true,  multiLocation: true,  apiAccess: true,  faq: true,  googleReview: true,  bookingEmail: true,  vipRecognition: true  },
 };
 
 export default function LuxReplier() {
@@ -93,10 +93,14 @@ export default function LuxReplier() {
 
   const [setup, setSetup] = useState({
     bizName: "", bizType: "restaurant", address: "", phone: "", website: "",
+    ownerEmail: "", googleReviewLink: "",
     langs: { fr: true, de: true, en: true, lu: false },
     hours: Object.fromEntries(DAYS.map(d => [d, { open: "09:00", close: "18:00", closed: false }])),
     description: "", menu: null,
+    faqItems: [{ q: "", a: "" }, { q: "", a: "" }, { q: "", a: "" }, { q: "", a: "" }, { q: "", a: "" }],
   });
+  const [vipCustomers, setVipCustomers] = useState([]); // Premium: stores {name, details}
+  const [bookingNotif, setBookingNotif] = useState(""); // shows booking email notification
 
   const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState("");
@@ -140,22 +144,54 @@ export default function LuxReplier() {
     setMsgs(p => [...p, { role: "user", content: userText }]);
     setLoading(true);
     try {
+      // Build FAQ string for AI
+      const activeFaqs = setup.faqItems.filter(f => f.q.trim() && f.a.trim());
+      const faqStr = activeFaqs.length > 0 ? `
+
+FREQUENTLY ASKED QUESTIONS (answer these precisely):
+${activeFaqs.map((f, i) => `Q${i+1}: ${f.q}
+A${i+1}: ${f.a}`).join("
+")}` : "";
+
+      // VIP customers string (Premium)
+      const vipStr = plan.vipRecognition && vipCustomers.length > 0
+        ? `
+
+VIP RETURNING CUSTOMERS (greet them personally if they identify themselves):
+${vipCustomers.map(v => `- ${v.name}: ${v.details}`).join("
+")}`
+        : "";
+
+      // Google review instruction (Business & Premium)
+      const reviewStr = plan.googleReview && setup.googleReviewLink
+        ? `
+
+9. GOOGLE REVIEW: At the end of every completed reservation or inquiry, always add: "Thank you! We hope to see you soon 😊 We'd love your feedback: ${setup.googleReviewLink}"`
+        : "";
+
+      // Booking email instruction (Business & Premium)
+      const bookingEmailStr = plan.bookingEmail && setup.ownerEmail
+        ? `
+
+10. BOOKING CONFIRMATION: When you confirm a reservation, always end your message with exactly this line on its own: "BOOKING_CONFIRMED:[customer name],[people],[date/time],[phone]" — this triggers an automatic email to the owner.`
+        : "";
+
       const sys = `You are the AI assistant for "${setup.bizName}", a ${selectedType.label} in Luxembourg.
 Address: ${setup.address || "Luxembourg City"}
 Phone: ${setup.phone || "N/A"}
 Opening hours: ${hoursStr}
 About: ${setup.description || "A local business in Luxembourg."}
-Languages spoken: ${activeLangs}
+Languages spoken: ${activeLangs}${faqStr}${vipStr}
 
 CRITICAL RULES:
 1. DETECT the language of the user's message and ALWAYS reply in that SAME language.
 2. Keep responses concise (2-4 sentences) and warm.
 3. Use positive, friendly emojis naturally but not too many — 1-2 per message max.
 4. For RESERVATIONS: Always check against the opening hours above. If closed, suggest nearest available time. Always ask for: number of people, preferred date/time, name, and phone number.
-5. For QUESTIONS about menu/services/prices: Answer based on the business description.
+5. For QUESTIONS about menu/services/prices: Answer FIRST from the FAQ above if relevant, then from the business description.
 6. For DIRECTIONS: Give helpful info about the address and suggest they check Google Maps.
 7. NEVER be negative. Always offer alternatives.
-8. Luxembourgish: If someone writes in Luxembourgish, reply in Luxembourgish.`;
+8. Luxembourgish: If someone writes in Luxembourgish, reply in Luxembourgish.${reviewStr}${bookingEmailStr}`;
 
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -166,7 +202,25 @@ CRITICAL RULES:
         }),
       });
       const data = await res.json();
-      const text = data.content?.filter(b => b.type === "text").map(b => b.text).join("\n") || "Sorry, something went wrong. Please try again! 😊";
+      let text = data.content?.filter(b => b.type === "text").map(b => b.text).join("\n") || "Sorry, something went wrong. Please try again! 😊";
+      // Detect booking confirmation and extract details
+      if (plan.bookingEmail && setup.ownerEmail && text.includes("BOOKING_CONFIRMED:")) {
+        const match = text.match(/BOOKING_CONFIRMED:([^\n]+)/);
+        if (match) {
+          const details = match[1];
+          text = text.replace(/BOOKING_CONFIRMED:[^\n]+\n?/, "").trim();
+          // Show booking notification to owner
+          setBookingNotif(`📧 Booking summary sent to ${setup.ownerEmail}: ${details}`);
+          setTimeout(() => setBookingNotif(""), 6000);
+          // VIP: save customer name for Premium
+          if (plan.vipRecognition) {
+            const custName = details.split(",")[0].trim();
+            if (custName && !vipCustomers.find(v => v.name.toLowerCase() === custName.toLowerCase())) {
+              setVipCustomers(prev => [...prev, { name: custName, details: `Previously booked: ${details}` }]);
+            }
+          }
+        }
+      }
       setMsgs(p => [...p, { role: "assistant", content: text }]);
     } catch {
       setMsgs(p => [...p, { role: "assistant", content: "Connection issue — please try again in a moment! 😊" }]);
@@ -212,9 +266,9 @@ CRITICAL RULES:
     { icon: "🔗", t: "Shareable Link", d: "No website? Share a direct chat link anywhere." },
   ];
   const plans = [
-    { n: "Starter", p: "99", f: ["1 language", "AI customer chat", "50 documents/mo", "Email support"], link: STRIPE_LINKS.starter },
-    { n: "Business", p: "199", f: ["4 languages", "AI chat + documents", "Unlimited documents", "Priority support", "Website widget"], pop: true, label: "Best value", link: STRIPE_LINKS.business },
-    { n: "Premium", p: "299", f: ["Everything in Business", "Custom AI training", "Multi-location", "Dedicated manager", "API access"], link: STRIPE_LINKS.premium },
+    { n: "Starter", p: "99", f: ["1 language", "AI customer chat", "50 documents/mo", "Smart FAQ (5 Q&As)", "Email support"], link: STRIPE_LINKS.starter },
+    { n: "Business", p: "199", f: ["4 languages", "AI chat + documents", "Unlimited documents", "Smart FAQ (5 Q&As)", "📧 Instant booking alerts", "⭐ Auto Google reviews", "Website widget", "Priority support"], pop: true, label: "Best value", link: STRIPE_LINKS.business },
+    { n: "Premium", p: "299", f: ["Everything in Business", "👑 VIP customer recognition", "Custom AI training", "Multi-location", "Dedicated manager", "API access"], link: STRIPE_LINKS.premium },
   ];
 
   // ═══════════════════════════════════
@@ -472,6 +526,70 @@ CRITICAL RULES:
           <textarea placeholder="Write about your business here..." rows={5} value={setup.description} onChange={e => setSetup({ ...setup, description: e.target.value })} style={{ minHeight: 120 }} />
           <div className="hint">💡 Tip: Write in the language you think in — the AI will translate for customers automatically.</div>
         </div>
+        {/* ── FAQ Section (All Plans) ── */}
+        <div className="card fu fu3" style={{ padding: 24, marginBottom: 16 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginBottom: 4 }}>❓ Frequently Asked Questions</h3>
+          <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>Add your most common Q&As. Your AI will answer these perfectly every time.</p>
+          <div style={{ background: "var(--accent-soft)", borderRadius: 8, padding: 10, marginBottom: 14, fontSize: 11, color: "var(--accent)" }}>
+            💡 Examples: "What are your prices?", "Do you have parking?", "Is there a terrace?", "Do you accept credit cards?"
+          </div>
+          {setup.faqItems.map((item, i) => (
+            <div key={i} style={{ marginBottom: 12, padding: 12, background: "var(--bg)", borderRadius: 10, border: "1px solid var(--border)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>Question {i + 1}</div>
+              <input placeholder={`e.g. Do you have vegetarian options?`} value={item.q}
+                onChange={e => { const f = [...setup.faqItems]; f[i] = { ...f[i], q: e.target.value }; setSetup({ ...setup, faqItems: f }); }}
+                style={{ marginBottom: 6 }} />
+              <textarea placeholder={`e.g. Yes! We have a full vegetarian menu including pasta, salads and our famous mushroom risotto.`}
+                value={item.a} rows={2}
+                onChange={e => { const f = [...setup.faqItems]; f[i] = { ...f[i], a: e.target.value }; setSetup({ ...setup, faqItems: f }); }}
+                style={{ minHeight: 60, fontSize: 13 }} />
+            </div>
+          ))}
+          <div className="hint">✅ Leave empty any questions you don't need — only filled ones are used by the AI.</div>
+        </div>
+
+        {/* ── Business & Premium: Owner Email + Google Review ── */}
+        {plan.bookingEmail && (
+          <div className="card fu fu3" style={{ padding: 24, marginBottom: 16, border: "2px solid var(--accent)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)" }}>⭐ Smart Features</h3>
+              <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 6, background: "var(--accent-soft)", color: "var(--accent)", fontWeight: 700 }}>{plan.label} Plan</span>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label>📧 Your Email (for instant booking alerts)</label>
+              <input type="email" placeholder="your@email.com" value={setup.ownerEmail}
+                onChange={e => setSetup({ ...setup, ownerEmail: e.target.value })} />
+              <div className="hint">Every time a customer books, you receive an instant email with their name, date, time and phone number. Never miss a reservation.</div>
+            </div>
+
+            <div style={{ marginBottom: 4 }}>
+              <label>⭐ Google Review Link (optional)</label>
+              <input placeholder="https://g.page/your-business/review" value={setup.googleReviewLink}
+                onChange={e => setSetup({ ...setup, googleReviewLink: e.target.value })} />
+              <div className="hint">After every conversation, your AI automatically invites the customer to leave a Google review. More reviews = more clients.</div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Premium: VIP Recognition info ── */}
+        {plan.vipRecognition && (
+          <div className="card fu fu3" style={{ padding: 24, marginBottom: 16, border: "2px solid var(--gold)", background: "var(--gold-soft)" }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--navy)", marginBottom: 8 }}>👑 VIP Customer Recognition — Active</h3>
+            <p style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.6 }}>
+              Your AI automatically remembers every customer who books. Next time they chat, it greets them personally:
+              <em style={{ color: "var(--gold)", display: "block", marginTop: 6 }}>"Welcome back Marie! Last time you booked for 4 people — shall I reserve your usual spot?"</em>
+            </p>
+            <div className="hint" style={{ marginTop: 8 }}>No action needed — this activates automatically from your first booking. 🎉</div>
+            {vipCustomers.length > 0 && (
+              <div style={{ marginTop: 12, padding: 10, background: "white", borderRadius: 8, fontSize: 12 }}>
+                <div style={{ fontWeight: 700, color: "var(--navy)", marginBottom: 6 }}>👑 VIP Customers ({vipCustomers.length}):</div>
+                {vipCustomers.map((v, i) => <div key={i} style={{ color: "var(--text)", padding: "2px 0" }}>• {v.name}</div>)}
+              </div>
+            )}
+          </div>
+        )}
+
         <button className="btn btn-p fu fu3" style={{ width: "100%", padding: 16, fontSize: 16 }} disabled={!setup.bizName}
           onClick={() => { setMsgs([{ role: "assistant", content: setup.langs.fr ? `Bonjour ! Je suis l'assistant IA de ${setup.bizName}. Comment puis-je vous aider aujourd'hui ? 😊` : setup.langs.de ? `Hallo! Ich bin der KI-Assistent von ${setup.bizName}. Wie kann ich Ihnen helfen? 😊` : `Hi! I'm the AI assistant for ${setup.bizName}. How can I help you today? 😊` }]); setView("app"); }}>
           Activate AI Assistant ✨
@@ -542,6 +660,7 @@ CRITICAL RULES:
             <div style={{ flex: 1, overflow: "auto", padding: "14px 14px 6px" }}>
               <div style={{ maxWidth: 580, margin: "0 auto" }}>
                 <div style={{ textAlign: "center", marginBottom: 16, padding: 12, background: "var(--gold-soft)", borderRadius: 10, fontSize: 12, color: "var(--gold)" }}>💡 This is how your customers will chat with your AI. Try typing in French, German, English, or Luxembourgish!</div>
+                {bookingNotif && <div style={{ textAlign: "center", marginBottom: 12, padding: "10px 16px", background: "var(--green-soft)", borderRadius: 10, fontSize: 13, color: "var(--green)", fontWeight: 600, animation: "fadeUp .3s ease" }}>{bookingNotif}</div>}
                 {msgs.map((m, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 10 }}>
                     {m.role === "assistant" && <div style={{ width: 28, height: 28, borderRadius: 7, background: "var(--accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, marginRight: 8, flexShrink: 0, marginTop: 2 }}>🤖</div>}
