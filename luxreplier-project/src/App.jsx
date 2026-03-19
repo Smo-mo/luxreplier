@@ -249,55 +249,20 @@ CRITICAL RULES:
         "KEY INFORMATION TO INCLUDE: " + (docDetails.emailBody || itemsStr) + "\n" +
         (docDetails.notes ? "ADDITIONAL NOTES: " + docDetails.notes + "\n" : "") +
         "\nWrite a warm, professional email for a " + selectedType.label + ". Include relevant details, be concise (3-5 paragraphs max), use 1-2 friendly emojis. Sign off with the business name and contact details. Do NOT invent any data not provided.",
-    };css = `
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=Playfair+Display:wght@600;700;800&display=swap');
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#FAFAF7;--card:#FFF;--navy:#1A2744;--accent:#2D5BFF;--accent-soft:#EBF0FF;
-  --gold:#C5963A;--gold-soft:#FBF5EB;--text:#2D3748;--muted:#8492A6;--border:#E8E6E1;
-  --green:#2EAF65;--green-soft:#EEFBF3;--red:#E53E3E;--red-soft:#FFF5F5;
-  --r:14px;--shadow:0 1px 3px rgba(26,39,68,0.06),0 8px 24px rgba(26,39,68,0.04);
-  --shadow-lg:0 4px 12px rgba(26,39,68,0.08),0 20px 48px rgba(26,39,68,0.06);
-  --font:'DM Sans',sans-serif;--display:'Playfair Display',Georgia,serif;
-}
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-@keyframes dotPulse{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-5px);opacity:1}}
-.fu{animation:fadeUp .45s ease both}
-.fu1{animation-delay:.06s}.fu2{animation-delay:.13s}.fu3{animation-delay:.2s}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block}
-.dot:nth-child(1){animation:dotPulse 1.2s ease 0s infinite}
-.dot:nth-child(2){animation:dotPulse 1.2s ease .15s infinite}
-.dot:nth-child(3){animation:dotPulse 1.2s ease .3s infinite}
-input,textarea,select{font-family:var(--font);font-size:14px;color:var(--text);
-  padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;outline:none;
-  width:100%;transition:border .2s;background:white}
-input:focus,textarea:focus,select:focus{border-color:var(--accent)}
-textarea{resize:vertical;min-height:80px}
-label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px}
-.hint{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  padding:11px 22px;border-radius:10px;border:none;font-family:var(--font);
-  font-weight:600;font-size:14px;cursor:pointer;transition:all .2s;text-decoration:none}
-.btn:active{transform:scale(.97)}
-.btn-p{background:var(--accent);color:white;box-shadow:0 2px 8px rgba(45,91,255,.25)}
-.btn-p:hover{box-shadow:0 4px 16px rgba(45,91,255,.35)}
-.btn-p:disabled{opacity:.5;cursor:not-allowed}
-.btn-o{background:white;color:var(--navy);border:1.5px solid var(--border)}
-.btn-o:hover{border-color:var(--accent);color:var(--accent)}
-.btn-g{background:transparent;color:var(--muted);border:none}
-.btn-g:hover{color:var(--accent)}
-.tag{display:inline-block;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:600}
-.tag-g{background:var(--green-soft);color:var(--green)}
-.tag-b{background:var(--accent-soft);color:var(--accent)}
-.tag-w{background:var(--gold-soft);color:var(--gold)}
-.card{background:white;border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--shadow)}
-@media(max-width:640px){
-  .hide-m{display:none!important}.m-full{width:100%!important}
-  .m-col{flex-direction:column!important}.m-stack{grid-template-columns:1fr!important}
-  .m-2col{grid-template-columns:1fr 1fr!important}
-  .m-sm h1{font-size:28px!important}.m-p{padding:16px!important}.show-m{display:block!important}
-}
-`;
+    };
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: prompts[docType] }] }),
+      });
+      const data = await res.json();
+      setDocResult(data.content?.filter(b => b.type === "text").map(b => b.text).join("\n") || "Error generating document.");
+    } catch { setDocResult("Connection error. Please try again."); }
+    setDocLoading(false);
+  }, [docType, docLang, setup, selectedType, docDetails]);
+
 
 const BUSINESS_TYPES = [
   { value: "restaurant", label: "🍽️ Restaurant / Café", hints: "Describe your cuisine, specialties, average meal price, seating capacity, terrace, dietary options (vegetarian, vegan, gluten-free), parking, WiFi, dress code, and any special events you host." },
