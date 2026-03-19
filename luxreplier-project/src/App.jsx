@@ -230,6 +230,250 @@ CRITICAL RULES:
     const bizContext = "Business: " + setup.bizName + " | Type: " + selectedType.label + " | Address: " + (setup.address || "Luxembourg") + " | Phone: " + (setup.phone || "N/A") + " | Website: " + (setup.website || "N/A") + " | About: " + (setup.description || "Professional business in Luxembourg");
 
     const prompts = {
+      invoice: "Generate a PROFESSIONAL invoice in " + langNames[docLang] + ". Use ONLY the real data provided below. No placeholders or sample data.\n\n" +
+        bizContext + "\n\nCLIENT: " + (docDetails.clientName || "Client") + (docDetails.clientEmail ? " | Email: " + docDetails.clientEmail : "") + (docDetails.clientPhone ? " | Phone: " + docDetails.clientPhone : "") + "\n" +
+        "INVOICE NUMBER: " + invoiceNum + "\nDATE: " + today + "\n" +
+        "ITEMS: " + (filledItems.length > 0 ? filledItems.map(it => it.desc + " | Qty: " + (it.qty||1) + " | Unit price: EUR" + (it.price||"0")).join(" / ") : "Please fill in items above") + "\n" +
+        (docDetails.notes ? "NOTES: " + docDetails.notes + "\n" : "") +
+        "\nFormat as a clean professional invoice with: header (business name, address, phone, website), invoice number and date, client details, itemized table with quantity/unit price/total per line, subtotal, TVA 17%, TOTAL in bold. Payment terms: 30 days. Do NOT invent any data.",
+
+      quote: "Generate a PROFESSIONAL quote in " + langNames[docLang] + ". Use ONLY the real data provided below.\n\n" +
+        bizContext + "\n\nCLIENT: " + (docDetails.clientName || "Client") + (docDetails.clientEmail ? " | Email: " + docDetails.clientEmail : "") + (docDetails.clientPhone ? " | Phone: " + docDetails.clientPhone : "") + "\n" +
+        "SERVICES/ITEMS: " + (filledItems.length > 0 ? filledItems.map(it => it.desc + " | Qty: " + (it.qty||1) + " | Unit price: EUR" + (it.price||"TBD")).join(" / ") : "services to be quoted") + "\n" +
+        (docDetails.notes ? "NOTES/SPECIAL CONDITIONS: " + docDetails.notes + "\n" : "") +
+        "\nFormat as a clean professional quote with: header, quote number, date, validity (30 days), client details, itemized services table, subtotal, TVA 17%, TOTAL, acceptance signature line. Do NOT invent any data.",
+
+      email: "Write a professional business email in " + langNames[docLang] + ". Use ONLY the real data provided below.\n\n" +
+        bizContext + "\n\nTO: " + (docDetails.emailRecipient || docDetails.clientName || "Customer") + (docDetails.clientEmail ? " (" + docDetails.clientEmail + ")" : "") + "\n" +
+        "EMAIL TYPE: " + docDetails.emailType + "\n" +
+        "KEY INFORMATION TO INCLUDE: " + (docDetails.emailBody || itemsStr) + "\n" +
+        (docDetails.notes ? "ADDITIONAL NOTES: " + docDetails.notes + "\n" : "") +
+        "\nWrite a warm, professional email for a " + selectedType.label + ". Include relevant details, be concise (3-5 paragraphs max), use 1-2 friendly emojis. Sign off with the business name and contact details. Do NOT invent any data not provided.",
+    };css = `
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=Playfair+Display:wght@600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#FAFAF7;--card:#FFF;--navy:#1A2744;--accent:#2D5BFF;--accent-soft:#EBF0FF;
+  --gold:#C5963A;--gold-soft:#FBF5EB;--text:#2D3748;--muted:#8492A6;--border:#E8E6E1;
+  --green:#2EAF65;--green-soft:#EEFBF3;--red:#E53E3E;--red-soft:#FFF5F5;
+  --r:14px;--shadow:0 1px 3px rgba(26,39,68,0.06),0 8px 24px rgba(26,39,68,0.04);
+  --shadow-lg:0 4px 12px rgba(26,39,68,0.08),0 20px 48px rgba(26,39,68,0.06);
+  --font:'DM Sans',sans-serif;--display:'Playfair Display',Georgia,serif;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes dotPulse{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-5px);opacity:1}}
+.fu{animation:fadeUp .45s ease both}
+.fu1{animation-delay:.06s}.fu2{animation-delay:.13s}.fu3{animation-delay:.2s}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block}
+.dot:nth-child(1){animation:dotPulse 1.2s ease 0s infinite}
+.dot:nth-child(2){animation:dotPulse 1.2s ease .15s infinite}
+.dot:nth-child(3){animation:dotPulse 1.2s ease .3s infinite}
+input,textarea,select{font-family:var(--font);font-size:14px;color:var(--text);
+  padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;outline:none;
+  width:100%;transition:border .2s;background:white}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:80px}
+label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px}
+.hint{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:11px 22px;border-radius:10px;border:none;font-family:var(--font);
+  font-weight:600;font-size:14px;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn:active{transform:scale(.97)}
+.btn-p{background:var(--accent);color:white;box-shadow:0 2px 8px rgba(45,91,255,.25)}
+.btn-p:hover{box-shadow:0 4px 16px rgba(45,91,255,.35)}
+.btn-p:disabled{opacity:.5;cursor:not-allowed}
+.btn-o{background:white;color:var(--navy);border:1.5px solid var(--border)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent)}
+.btn-g{background:transparent;color:var(--muted);border:none}
+.btn-g:hover{color:var(--accent)}
+.tag{display:inline-block;padding:2px 10px;border-radius:6px;font-size:11px;font-weight:600}
+.tag-g{background:var(--green-soft);color:var(--green)}
+.tag-b{background:var(--accent-soft);color:var(--accent)}
+.tag-w{background:var(--gold-soft);color:var(--gold)}
+.card{background:white;border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--shadow)}
+@media(max-width:640px){
+  .hide-m{display:none!important}.m-full{width:100%!important}
+  .m-col{flex-direction:column!important}.m-stack{grid-template-columns:1fr!important}
+  .m-2col{grid-template-columns:1fr 1fr!important}
+  .m-sm h1{font-size:28px!important}.m-p{padding:16px!important}.show-m{display:block!important}
+}
+`;
+
+const BUSINESS_TYPES = [
+  { value: "restaurant", label: "🍽️ Restaurant / Café", hints: "Describe your cuisine, specialties, average meal price, seating capacity, terrace, dietary options (vegetarian, vegan, gluten-free), parking, WiFi, dress code, and any special events you host." },
+  { value: "salon", label: "💇 Hair & Beauty Salon", hints: "Describe your services (cuts, coloring, styling, nails, facials), price ranges, brands you use, walk-ins vs appointments only, and any specialties." },
+  { value: "plumber", label: "🔧 Plumbing / Trades", hints: "Describe services offered, service area, emergency availability, average response time, certifications, and price ranges for common jobs." },
+  { value: "accounting", label: "📊 Accounting / Fiduciary", hints: "Describe services (tax returns, bookkeeping, company formation, payroll), which languages you serve clients in, industries you specialize in, and hourly/fixed rates." },
+  { value: "dental", label: "🦷 Dental / Medical Clinic", hints: "Describe treatments offered, insurance accepted (CNS, private), emergency slots, average wait times, and any specialties (orthodontics, cosmetic)." },
+  { value: "retail", label: "🛍️ Retail / Shop", hints: "Describe what you sell, brands carried, price ranges, online ordering availability, return policy, and delivery options." },
+  { value: "realestate", label: "🏠 Real Estate Agency", hints: "Describe areas you cover, property types (rental, sale, commercial), average price ranges, and your process for viewings and contracts." },
+  { value: "other", label: "📌 Other", hints: "Describe your services, target customers, pricing, location details, and what makes your business unique." },
+];
+
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+const STRIPE_LINKS = {
+  starter: "https://buy.stripe.com/eVq3cubrqaAPadJgVg0Ny06",
+  business: "https://buy.stripe.com/fZu7sKcvuaAPclR34q0Ny07",
+  premium: "https://buy.stripe.com/8x2fZg1QQ24jetZ0Wi0Ny08",
+};
+
+// ── Plan limits ───────────────────────────────────────────
+const PLAN_CONFIG = {
+  starter:  { label: "Starter",  price: 99,  maxDocs: 50,  maxLangs: 1,  widget: false, multiLocation: false, apiAccess: false, faq: true,  googleReview: false, bookingEmail: false, vipRecognition: false },
+  business: { label: "Business", price: 199, maxDocs: null, maxLangs: 4, widget: true,  multiLocation: false, apiAccess: false, faq: true,  googleReview: true,  bookingEmail: true,  vipRecognition: false },
+  premium:  { label: "Premium",  price: 299, maxDocs: null, maxLangs: 4, widget: true,  multiLocation: true,  apiAccess: true,  faq: true,  googleReview: true,  bookingEmail: true,  vipRecognition: true  },
+};
+
+export default function LuxReplier() {
+  const [view, setView] = useState("home");
+  const [step, setStep] = useState(1);
+  const [section, setSection] = useState("chat");
+  const [lang, setLang] = useState("en");
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const [userPlan, setUserPlan] = useState("business"); // set when user clicks a plan
+
+  const [signup, setSignup] = useState({ name: "", email: "", password: "", card: "" });
+
+  const [setup, setSetup] = useState({
+    bizName: "", bizType: "restaurant", address: "", phone: "", website: "",
+    ownerEmail: "", googleReviewLink: "",
+    langs: { fr: true, de: true, en: true, lu: false },
+    hours: Object.fromEntries(DAYS.map(d => [d, { open: "09:00", close: "18:00", closed: false }])),
+    description: "", menu: null,
+    faqItems: [{ q: "", a: "" }, { q: "", a: "" }, { q: "", a: "" }, { q: "", a: "" }, { q: "", a: "" }],
+  });
+  const [vipCustomers, setVipCustomers] = useState([]); // Premium: stores {name, details}
+  const [bookingNotif, setBookingNotif] = useState(""); // shows booking email notification
+
+  const [msgs, setMsgs] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const chatEnd = useRef(null);
+  const inputRef = useRef(null);
+
+  const [docType, setDocType] = useState("invoice");
+  const [docLang, setDocLang] = useState("fr");
+  const [docResult, setDocResult] = useState(null);
+  const [docLoading, setDocLoading] = useState(false);
+
+  const [copied, setCopied] = useState("");
+  const [docCount, setDocCount] = useState(0);
+  const [docDetails, setDocDetails] = useState({
+    clientName: "", clientEmail: "", clientPhone: "",
+    items: [{ desc: "", qty: "1", price: "" }, { desc: "", qty: "1", price: "" }, { desc: "", qty: "1", price: "" }],
+    emailType: "confirmation", emailSubject: "", emailRecipient: "", emailBody: "",
+    invoiceNumber: "", notes: "",
+  });
+  const plan = PLAN_CONFIG[userPlan] || PLAN_CONFIG.business;
+
+  useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, loading]);
+
+  const selectedType = BUSINESS_TYPES.find(b => b.value === setup.bizType) || BUSINESS_TYPES[0];
+
+  const widgetId = setup.bizName ? setup.bizName.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-") + "-" + Math.random().toString(36).slice(2, 8) : "my-business-abc123";
+
+  const copyText = (text, id) => {
+    navigator.clipboard?.writeText(text);
+    setCopied(id);
+    setTimeout(() => setCopied(""), 2000);
+  };
+
+  const hoursStr = DAYS.map(d => {
+    const h = setup.hours[d];
+    return h.closed ? `${d}: Closed` : `${d}: ${h.open}–${h.close}`;
+  }).join("; ");
+
+  const activeLangs = Object.entries(setup.langs).filter(([, v]) => v).map(([k]) =>
+    ({ fr: "French", de: "German", en: "English", lu: "Luxembourgish" }[k])).join(", ");
+
+  const sendMsg = useCallback(async () => {
+    if (!input.trim() || loading) return;
+    const userText = input.trim();
+    setInput("");
+    setMsgs(p => [...p, { role: "user", content: userText }]);
+    setLoading(true);
+    try {
+      // Build FAQ string for AI
+      const activeFaqs = setup.faqItems.filter(f => f.q.trim() && f.a.trim());
+      const faqStr = activeFaqs.length > 0 ? "\n\nFREQUENTLY ASKED QUESTIONS (answer these precisely):\n" + activeFaqs.map((f, i) => "Q" + (i+1) + ": " + f.q + "\nA" + (i+1) + ": " + f.a).join("\n") : "";
+
+      // VIP customers string (Premium)
+      const vipStr = plan.vipRecognition && vipCustomers.length > 0 ? "\n\nVIP RETURNING CUSTOMERS (greet them personally if they identify themselves):\n" + vipCustomers.map(v => "- " + v.name + ": " + v.details).join("\n") : "";
+
+      // Google review instruction (Business & Premium)
+      const reviewStr = plan.googleReview && setup.googleReviewLink ? "\n\n9. GOOGLE REVIEW: At the end of every completed reservation or inquiry, always add a review invite with the link: " + setup.googleReviewLink : "";
+
+      // Booking email instruction (Business & Premium)
+      const bookingEmailStr = plan.bookingEmail && setup.ownerEmail ? "\n\n10. BOOKING CONFIRMATION: When you confirm a reservation, always end your message with this exact line: BOOKING_CONFIRMED:[customer name],[number of people],[date and time],[phone number] — this triggers an automatic email to the owner." : "";
+
+      const sys = `You are the AI assistant for "${setup.bizName}", a ${selectedType.label} in Luxembourg.
+Address: ${setup.address || "Luxembourg City"}
+Phone: ${setup.phone || "N/A"}
+Opening hours: ${hoursStr}
+About: ${setup.description || "A local business in Luxembourg."}
+Languages spoken: ${activeLangs}${faqStr}${vipStr}
+
+CRITICAL RULES:
+1. DETECT the language of the user's message and ALWAYS reply in that SAME language.
+2. Keep responses concise (2-4 sentences) and warm.
+3. Use positive, friendly emojis naturally but not too many — 1-2 per message max.
+4. For RESERVATIONS: Always check against the opening hours above. If closed, suggest nearest available time. Always ask for: number of people, preferred date/time, name, and phone number.
+5. For QUESTIONS about menu/services/prices: Answer FIRST from the FAQ above if relevant, then from the business description.
+6. For DIRECTIONS: Give helpful info about the address and suggest they check Google Maps.
+7. NEVER be negative. Always offer alternatives.
+8. Luxembourgish: If someone writes in Luxembourgish, reply in Luxembourgish.${reviewStr}${bookingEmailStr}`;
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514", max_tokens: 600, system: sys,
+          messages: [...msgs.slice(-8), { role: "user", content: userText }].map(m => ({ role: m.role, content: m.content })),
+        }),
+      });
+      const data = await res.json();
+      let text = data.content?.filter(b => b.type === "text").map(b => b.text).join("\n") || "Sorry, something went wrong. Please try again! 😊";
+      // Detect booking confirmation and extract details
+      if (plan.bookingEmail && setup.ownerEmail && text.includes("BOOKING_CONFIRMED:")) {
+        const match = text.match(/BOOKING_CONFIRMED:([^\n]+)/);
+        if (match) {
+          const details = match[1];
+          text = text.replace(/BOOKING_CONFIRMED:[^\n]+\n?/, "").trim();
+          // Show booking notification to owner
+          setBookingNotif(`📧 Booking summary sent to ${setup.ownerEmail}: ${details}`);
+          setTimeout(() => setBookingNotif(""), 6000);
+          // VIP: save customer name for Premium
+          if (plan.vipRecognition) {
+            const custName = details.split(",")[0].trim();
+            if (custName && !vipCustomers.find(v => v.name.toLowerCase() === custName.toLowerCase())) {
+              setVipCustomers(prev => [...prev, { name: custName, details: `Previously booked: ${details}` }]);
+            }
+          }
+        }
+      }
+      setMsgs(p => [...p, { role: "assistant", content: text }]);
+    } catch {
+      setMsgs(p => [...p, { role: "assistant", content: "Connection issue — please try again in a moment! 😊" }]);
+    }
+    setLoading(false);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, [input, loading, msgs, setup, selectedType, hoursStr, activeLangs]);
+
+  const genDoc = useCallback(async () => {
+    setDocLoading(true); setDocResult(null);
+    const langNames = { en: "English", fr: "French", de: "German", lu: "Luxembourgish" };
+    const today = new Date().toLocaleDateString("fr-LU", { day: "2-digit", month: "long", year: "numeric" });
+    const invoiceNum = docDetails.invoiceNumber || ("INV-" + new Date().getFullYear() + "-" + String(Math.floor(Math.random()*9000)+1000));
+    const filledItems = docDetails.items.filter(it => it.desc.trim());
+    const itemsStr = filledItems.length > 0
+      ? filledItems.map(it => it.desc + (it.qty !== "1" ? " (x" + it.qty + ")" : "") + (it.price ? " — €" + it.price : "")).join(", ")
+      : "services provided";
+    const subtotal = filledItems.reduce((sum, it) => sum + (parseFloat(it.price) * parseFloat(it.qty || 1) || 0), 0);
+
+    const bizContext = "Business: " + setup.bizName + " | Type: " + selectedType.label + " | Address: " + (setup.address || "Luxembourg") + " | Phone: " + (setup.phone || "N/A") + " | Website: " + (setup.website || "N/A") + " | About: " + (setup.description || "Professional business in Luxembourg");
+
+    const prompts = {
       invoice: "Generate a PROFESSIONAL invoice in " + langNames[docLang] + ". Use ONLY the real data provided below — no placeholders or sample data.
 
 " +
@@ -860,27 +1104,24 @@ TO: " + (docDetails.emailRecipient || docDetails.clientName || "Customer") + (do
                     </div>
                   ))}
                   {/* Live total preview */}
-                  {docDetails.items.some(it => it.price) && (
-                    <div style={{ marginTop: 12, padding: 12, background: "var(--bg)", borderRadius: 8, border: "1px solid var(--border)" }}>
-                      {(() => {
-                        const sub = docDetails.items.reduce((s, it) => s + (parseFloat(it.price) * parseFloat(it.qty||1) || 0), 0);
-                        const vat = sub * 0.17;
-                        return (
-                          <div style={{ fontSize: 13 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)", marginBottom: 4 }}>
-                              <span>Subtotal</span><span>€{sub.toFixed(2)}</span>
-                            </div>
-                            <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)", marginBottom: 4 }}>
-                              <span>TVA 17%</span><span>€{vat.toFixed(2)}</span>
-                            </div>
-                            <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, color: "var(--navy)", fontSize: 15, borderTop: "1px solid var(--border)", paddingTop: 6 }}>
-                              <span>TOTAL</span><span>€{(sub + vat).toFixed(2)}</span>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  )}
+                  {docDetails.items.some(it => it.price) && (() => {
+                    const sub = docDetails.items.reduce((s, it) => s + (parseFloat(it.price) * parseFloat(it.qty||1) || 0), 0);
+                    const vat = parseFloat((sub * 0.17).toFixed(2));
+                    const total = parseFloat((sub + vat).toFixed(2));
+                    return (
+                      <div style={{ marginTop: 12, padding: 12, background: "var(--bg)", borderRadius: 8, border: "1px solid var(--border)", fontSize: 13 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)", marginBottom: 4 }}>
+                          <span>Subtotal</span><span>€{sub.toFixed(2)}</span>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)", marginBottom: 4 }}>
+                          <span>TVA 17%</span><span>€{vat.toFixed(2)}</span>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, color: "var(--navy)", fontSize: 15, borderTop: "1px solid var(--border)", paddingTop: 6 }}>
+                          <span>TOTAL</span><span>€{total.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
