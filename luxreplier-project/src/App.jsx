@@ -115,6 +115,12 @@ export default function LuxReplier() {
 
   const [copied, setCopied] = useState("");
   const [docCount, setDocCount] = useState(0);
+  const [docDetails, setDocDetails] = useState({
+    clientName: "", clientEmail: "", clientPhone: "",
+    items: [{ desc: "", qty: "1", price: "" }, { desc: "", qty: "1", price: "" }, { desc: "", qty: "1", price: "" }],
+    emailType: "confirmation", emailSubject: "", emailRecipient: "", emailBody: "",
+    invoiceNumber: "", notes: "",
+  });
   const plan = PLAN_CONFIG[userPlan] || PLAN_CONFIG.business;
 
   useEffect(() => { chatEnd.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, loading]);
@@ -213,22 +219,75 @@ CRITICAL RULES:
   const genDoc = useCallback(async () => {
     setDocLoading(true); setDocResult(null);
     const langNames = { en: "English", fr: "French", de: "German", lu: "Luxembourgish" };
+    const today = new Date().toLocaleDateString("fr-LU", { day: "2-digit", month: "long", year: "numeric" });
+    const invoiceNum = docDetails.invoiceNumber || ("INV-" + new Date().getFullYear() + "-" + String(Math.floor(Math.random()*9000)+1000));
+    const filledItems = docDetails.items.filter(it => it.desc.trim());
+    const itemsStr = filledItems.length > 0
+      ? filledItems.map(it => it.desc + (it.qty !== "1" ? " (x" + it.qty + ")" : "") + (it.price ? " — €" + it.price : "")).join(", ")
+      : "services provided";
+    const subtotal = filledItems.reduce((sum, it) => sum + (parseFloat(it.price) * parseFloat(it.qty || 1) || 0), 0);
+
+    const bizContext = "Business: " + setup.bizName + " | Type: " + selectedType.label + " | Address: " + (setup.address || "Luxembourg") + " | Phone: " + (setup.phone || "N/A") + " | Website: " + (setup.website || "N/A") + " | About: " + (setup.description || "Professional business in Luxembourg");
+
     const prompts = {
-      invoice: `Generate a professional invoice in ${langNames[docLang]} for "${setup.bizName}" (${selectedType.label} at ${setup.address || "Luxembourg City"}). Include: business header with Luxembourg address and phone ${setup.phone}, invoice #2026-0042, today's date, a sample client name, 3 realistic line items with EUR prices, subtotal, 17% TVA/VAT, total. Use clean plain-text formatting.`,
-      quote: `Generate a professional quote/devis in ${langNames[docLang]} for "${setup.bizName}" (${selectedType.label} in Luxembourg). Include: business header, quote number, date, sample client, 3-4 service items with EUR prices, 30-day validity, payment terms.`,
-      email: `Write a professional business email in ${langNames[docLang]} from "${setup.bizName}" (${selectedType.label}) to a client confirming their appointment/order/reservation. Be warm, professional, include a friendly emoji or two.`,
+      invoice: "Generate a PROFESSIONAL invoice in " + langNames[docLang] + ". Use ONLY the real data provided below — no placeholders or sample data.
+
+" +
+        bizContext + "
+
+CLIENT: " + (docDetails.clientName || "Client") + (docDetails.clientEmail ? " | Email: " + docDetails.clientEmail : "") + (docDetails.clientPhone ? " | Phone: " + docDetails.clientPhone : "") + "
+" +
+        "INVOICE NUMBER: " + invoiceNum + "
+DATE: " + today + "
+" +
+        "ITEMS: " + (filledItems.length > 0 ? filledItems.map(it => it.desc + " | Qty: " + (it.qty||1) + " | Unit price: €" + (it.price||"0")).join(" /// ") : "Please fill in items above") + "
+" +
+        (docDetails.notes ? "NOTES: " + docDetails.notes : "") + "
+
+" +
+        "Format as a clean professional invoice with: header (business name, address, phone, website), invoice number and date, client details, itemized table with quantity/unit price/total per line, subtotal, TVA 17%, TOTAL in bold. Add payment terms: 30 days. Do NOT invent any data.",
+
+      quote: "Generate a PROFESSIONAL quote/devis in " + langNames[docLang] + ". Use ONLY the real data provided below.
+
+" +
+        bizContext + "
+
+CLIENT: " + (docDetails.clientName || "Client") + (docDetails.clientEmail ? " | Email: " + docDetails.clientEmail : "") + (docDetails.clientPhone ? " | Phone: " + docDetails.clientPhone : "") + "
+" +
+        "SERVICES/ITEMS: " + (filledItems.length > 0 ? filledItems.map(it => it.desc + " | Qty: " + (it.qty||1) + " | Unit price: €" + (it.price||"TBD")).join(" /// ") : "services to be quoted") + "
+" +
+        (docDetails.notes ? "NOTES/SPECIAL CONDITIONS: " + docDetails.notes : "") + "
+
+" +
+        "Format as a clean professional quote with: header, quote number, date, validity (30 days), client details, itemized services table, subtotal, TVA 17%, TOTAL, acceptance signature line. Do NOT invent any data.",
+
+      email: "Write a professional business email in " + langNames[docLang] + ". Use ONLY the real data provided below.
+
+" +
+        bizContext + "
+
+TO: " + (docDetails.emailRecipient || docDetails.clientName || "Customer") + (docDetails.clientEmail ? " (" + docDetails.clientEmail + ")" : "") + "
+" +
+        "EMAIL TYPE: " + docDetails.emailType + "
+" +
+        "KEY INFORMATION TO INCLUDE: " + (docDetails.emailBody || itemsStr) + "
+" +
+        (docDetails.notes ? "ADDITIONAL NOTES: " + docDetails.notes : "") + "
+
+" +
+        "Write a warm, professional email appropriate for a " + selectedType.label + ". Include relevant details, be concise (3-5 paragraphs max), use 1-2 friendly emojis. Sign off with the business name and contact details. Do NOT invent any data not provided.",
     };
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, messages: [{ role: "user", content: prompts[docType] }] }),
+        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: prompts[docType] }] }),
       });
       const data = await res.json();
       setDocResult(data.content?.filter(b => b.type === "text").map(b => b.text).join("\n") || "Error generating document.");
     } catch { setDocResult("Connection error. Please try again."); }
     setDocLoading(false);
-  }, [docType, docLang, setup, selectedType]);
+  }, [docType, docLang, setup, selectedType, docDetails]);
 
   const scrollTo = id => { document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }); setMobileMenu(false); };
   const langFlags = { en: "🇬🇧", fr: "🇫🇷", de: "🇩🇪" };
@@ -703,33 +762,209 @@ CRITICAL RULES:
         )}
         {section === "docs" && (
           <div style={{ flex: 1, overflow: "auto", padding: "18px 14px" }}>
-            <div style={{ maxWidth: 560, margin: "0 auto" }}>
-              <h3 style={{ fontFamily: "var(--display)", fontSize: 20, color: "var(--navy)", marginBottom: 14 }}>📄 Generate Documents</h3>
-              <div className="card" style={{ padding: 20, marginBottom: 14 }}>
-                <label>Document Type</label>
-                <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>{[{ id: "invoice", l: "🧾 Invoice" }, { id: "quote", l: "📋 Quote" }, { id: "email", l: "✉️ Email" }].map(d => (<button key={d.id} className={`btn ${docType === d.id ? "btn-p" : "btn-o"}`} onClick={() => setDocType(d.id)} style={{ flex: 1, fontSize: 13, padding: "9px 10px" }}>{d.l}</button>))}</div>
-                <label>Language</label>
-                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>{[{ c: "fr", f: "🇫🇷" }, { c: "de", f: "🇩🇪" }, { c: "en", f: "🇬🇧" }, { c: "lu", f: "🇱🇺" }].map(l => (<button key={l.c} className={`btn ${docLang === l.c ? "btn-p" : "btn-o"}`} onClick={() => setDocLang(l.c)} style={{ flex: 1, fontSize: 15, padding: "9px 8px" }}>{l.f}</button>))}</div>
-                {plan.maxDocs && docCount >= plan.maxDocs ? (
-                  <div style={{ background: "var(--red-soft)", borderRadius: 10, padding: 14, textAlign: "center" }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--red)", marginBottom: 6 }}>
-                      📄 Document limit reached ({plan.maxDocs}/mo)
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>Upgrade to Business for unlimited documents.</div>
-                    <button className="btn btn-p" style={{ fontSize: 13 }} onClick={() => window.open(STRIPE_LINKS.business, "_blank")}>Upgrade to Business →</button>
-                  </div>
-                ) : (
-                  <button className="btn btn-p" style={{ width: "100%", padding: 13, fontSize: 15 }} onClick={() => { genDoc(); if(plan.maxDocs) setDocCount(c => c+1); }} disabled={docLoading}>{docLoading ? "Generating..." : `Generate → ${plan.maxDocs ? `(${docCount}/${plan.maxDocs})` : "Unlimited"}`}</button>
-                )}
+            <div style={{ maxWidth: 600, margin: "0 auto" }}>
+
+              {/* Header */}
+              <div style={{ marginBottom: 20 }}>
+                <h3 style={{ fontFamily: "var(--display)", fontSize: 22, color: "var(--navy)", marginBottom: 4 }}>📄 Document Generator</h3>
+                <p style={{ fontSize: 13, color: "var(--muted)" }}>Fill in your client details below — the AI generates a perfect professional document using your real information. No invented data.</p>
               </div>
-              {docLoading && <div style={{ textAlign: "center", padding: 28 }}><span className="dot" style={{ marginRight: 5 }} /><span className="dot" style={{ marginRight: 5 }} /><span className="dot" /></div>}
-              {docResult && !docLoading && (
-                <div className="card" style={{ overflow: "hidden" }}>
-                  <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--navy)" }}>✅ Document Ready</span>
-                    <button className="btn" style={{ padding: "4px 12px", fontSize: 12, background: "var(--accent-soft)", color: "var(--accent)", border: "none" }} onClick={() => copyText(docResult, "doc")}>{copied === "doc" ? "Copied! ✓" : "Copy"}</button>
+
+              {/* Step 1 — Document Type & Language */}
+              <div className="card" style={{ padding: 20, marginBottom: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 12 }}>Step 1 — What do you need?</div>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                  {[{ id: "invoice", l: "🧾 Invoice", d: "Bill a client for work done" }, { id: "quote", l: "📋 Quote", d: "Price offer before the job" }, { id: "email", l: "✉️ Email", d: "Professional email to a client" }].map(d => (
+                    <button key={d.id} onClick={() => { setDocType(d.id); setDocResult(null); }}
+                      style={{ flex: 1, padding: "10px 8px", borderRadius: 10, border: docType === d.id ? "2px solid var(--accent)" : "1.5px solid var(--border)", background: docType === d.id ? "var(--accent-soft)" : "white", cursor: "pointer", textAlign: "center" }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: docType === d.id ? "var(--accent)" : "var(--navy)" }}>{d.l}</div>
+                      <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 2 }}>{d.d}</div>
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 8 }}>Language of the document:</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {[{ c: "fr", f: "🇫🇷", l: "Français" }, { c: "de", f: "🇩🇪", l: "Deutsch" }, { c: "en", f: "🇬🇧", l: "English" }, { c: "lu", f: "🇱🇺", l: "Lëtzebuergesch" }].map(l => (
+                    <button key={l.c} onClick={() => setDocLang(l.c)}
+                      style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: docLang === l.c ? "2px solid var(--accent)" : "1.5px solid var(--border)", background: docLang === l.c ? "var(--accent-soft)" : "white", cursor: "pointer", textAlign: "center", fontSize: 12, fontWeight: docLang === l.c ? 700 : 500, color: docLang === l.c ? "var(--accent)" : "var(--muted)" }}>
+                      <div style={{ fontSize: 18 }}>{l.f}</div>{l.l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Step 2 — Your Business Info (auto-filled from setup) */}
+              <div className="card" style={{ padding: 20, marginBottom: 14, background: "var(--green-soft)", border: "1px solid var(--green)" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--green)", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>✅ Step 2 — Your Business (auto-filled from your setup)</div>
+                <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.7 }}>
+                  <strong>{setup.bizName || "Your Business Name"}</strong> · {selectedType.label}<br/>
+                  📍 {setup.address || "Your address"} · 📞 {setup.phone || "Your phone"}{setup.website ? " · 🌐 " + setup.website : ""}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--green)", marginTop: 6 }}>💡 This info is automatically used in your document — no need to re-enter it.</div>
+              </div>
+
+              {/* Step 3 — Client Details */}
+              <div className="card" style={{ padding: 20, marginBottom: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 14 }}>Step 3 — Client Details</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                  <div>
+                    <label>{docType === "email" ? "👤 Recipient Name *" : "👤 Client Name *"}</label>
+                    <input placeholder={docType === "invoice" ? "e.g. Pierre Dupont" : docType === "quote" ? "e.g. Hans Weber GmbH" : "e.g. Sarah Johnson"} value={docDetails.clientName} onChange={e => setDocDetails({ ...docDetails, clientName: e.target.value })} />
                   </div>
-                  <pre style={{ padding: 16, margin: 0, fontSize: 12, lineHeight: 1.6, whiteSpace: "pre-wrap", fontFamily: "'DM Sans',monospace", background: "var(--bg)", maxHeight: 320, overflow: "auto" }}>{docResult}</pre>
+                  <div>
+                    <label>📧 Client Email</label>
+                    <input type="email" placeholder="client@email.com" value={docDetails.clientEmail} onChange={e => setDocDetails({ ...docDetails, clientEmail: e.target.value })} />
+                  </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <label>📞 Client Phone</label>
+                    <input placeholder="+352 621 234 567" value={docDetails.clientPhone} onChange={e => setDocDetails({ ...docDetails, clientPhone: e.target.value })} />
+                  </div>
+                  {(docType === "invoice") && (
+                    <div>
+                      <label>🔢 Invoice Number (optional)</label>
+                      <input placeholder="e.g. INV-2026-001 (auto if empty)" value={docDetails.invoiceNumber} onChange={e => setDocDetails({ ...docDetails, invoiceNumber: e.target.value })} />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Step 4 — Items (Invoice & Quote) or Email content */}
+              {(docType === "invoice" || docType === "quote") && (
+                <div className="card" style={{ padding: 20, marginBottom: 14 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Step 4 — {docType === "invoice" ? "Services / Items Billed" : "Services to Quote"}</div>
+                  <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
+                    {docType === "invoice"
+                      ? "Enter what you did for the client and the price. The AI will calculate subtotal + 17% VAT automatically."
+                      : "Enter the services you're proposing and your prices. Leave price empty if still to be confirmed."}
+                  </p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 8, marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase" }}>Description</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", width: 50, textAlign: "center" }}>Qty</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", width: 80, textAlign: "center" }}>Price €</div>
+                  </div>
+                  {docDetails.items.map((item, i) => (
+                    <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 8, marginBottom: 8 }}>
+                      <input placeholder={
+                        selectedType.value === "restaurant" ? ["Private dinner menu", "Wine selection", "Service charge"][i] || "Additional service"
+                        : selectedType.value === "salon" ? ["Haircut & styling", "Colouring treatment", "Nail care"][i] || "Additional service"
+                        : selectedType.value === "plumber" ? ["Pipe repair labour", "Materials & parts", "Emergency call-out"][i] || "Additional service"
+                        : selectedType.value === "dental" ? ["Consultation fee", "Treatment procedure", "X-ray imaging"][i] || "Additional service"
+                        : selectedType.value === "accounting" ? ["Tax return preparation", "Bookkeeping (monthly)", "Company formation"][i] || "Additional service"
+                        : selectedType.value === "realestate" ? ["Agency commission", "Administrative fees", "Property valuation"][i] || "Additional service"
+                        : ["Service description", "Additional service", "Other charges"][i] || "Service"
+                      } value={item.desc} onChange={e => { const its = [...docDetails.items]; its[i] = { ...its[i], desc: e.target.value }; setDocDetails({ ...docDetails, items: its }); }} />
+                      <input placeholder="1" value={item.qty} onChange={e => { const its = [...docDetails.items]; its[i] = { ...its[i], qty: e.target.value }; setDocDetails({ ...docDetails, items: its }); }} style={{ width: 50, textAlign: "center" }} />
+                      <input placeholder="0.00" value={item.price} onChange={e => { const its = [...docDetails.items]; its[i] = { ...its[i], price: e.target.value }; setDocDetails({ ...docDetails, items: its }); }} style={{ width: 80, textAlign: "right" }} />
+                    </div>
+                  ))}
+                  {/* Live total preview */}
+                  {docDetails.items.some(it => it.price) && (
+                    <div style={{ marginTop: 12, padding: 12, background: "var(--bg)", borderRadius: 8, border: "1px solid var(--border)" }}>
+                      {(() => {
+                        const sub = docDetails.items.reduce((s, it) => s + (parseFloat(it.price) * parseFloat(it.qty||1) || 0), 0);
+                        const vat = sub * 0.17;
+                        return (
+                          <div style={{ fontSize: 13 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)", marginBottom: 4 }}>
+                              <span>Subtotal</span><span>€{sub.toFixed(2)}</span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)", marginBottom: 4 }}>
+                              <span>TVA 17%</span><span>€{vat.toFixed(2)}</span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, color: "var(--navy)", fontSize: 15, borderTop: "1px solid var(--border)", paddingTop: 6 }}>
+                              <span>TOTAL</span><span>€{(sub + vat).toFixed(2)}</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Email specific fields */}
+              {docType === "email" && (
+                <div className="card" style={{ padding: 20, marginBottom: 14 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 14 }}>Step 4 — Email Details</div>
+                  <div style={{ marginBottom: 12 }}>
+                    <label>📨 Email Type</label>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {[
+                        { id: "confirmation", l: "✅ Booking Confirmation" },
+                        { id: "reminder", l: "🔔 Appointment Reminder" },
+                        { id: "followup", l: "💬 Follow-up" },
+                        { id: "quote", l: "📋 Quote Sending" },
+                        { id: "thankyou", l: "🙏 Thank You" },
+                        { id: "custom", l: "✏️ Custom" },
+                      ].map(t => (
+                        <button key={t.id} onClick={() => setDocDetails({ ...docDetails, emailType: t.id })}
+                          style={{ padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, border: docDetails.emailType === t.id ? "2px solid var(--accent)" : "1.5px solid var(--border)", background: docDetails.emailType === t.id ? "var(--accent-soft)" : "white", color: docDetails.emailType === t.id ? "var(--accent)" : "var(--muted)", cursor: "pointer" }}>
+                          {t.l}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: 10 }}>
+                    <label>📝 Key information to include in the email</label>
+                    <textarea placeholder={
+                      docDetails.emailType === "confirmation" ? "e.g. Reservation for 4 people, Saturday 15 March at 8pm. Table on the terrace as requested."
+                      : docDetails.emailType === "reminder" ? "e.g. Appointment on Monday 18 March at 10am. Please arrive 5 minutes early."
+                      : docDetails.emailType === "followup" ? "e.g. Following up on our meeting last week regarding the renovation quote."
+                      : docDetails.emailType === "quote" ? "e.g. Quote for kitchen renovation — total €4,500 including labour and materials."
+                      : docDetails.emailType === "thankyou" ? "e.g. Thank you for dining with us last night. We hope you enjoyed the tasting menu."
+                      : "Describe what the email should say..."
+                    } rows={3} value={docDetails.emailBody} onChange={e => setDocDetails({ ...docDetails, emailBody: e.target.value })} style={{ minHeight: 80 }} />
+                  </div>
+                </div>
+              )}
+
+              {/* Notes field */}
+              <div className="card" style={{ padding: 20, marginBottom: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Step 5 — Additional Notes (optional)</div>
+                <input placeholder={
+                  docType === "invoice" ? "e.g. Payment due within 30 days. Bank transfer preferred."
+                  : docType === "quote" ? "e.g. Quote valid for 30 days. 50% deposit required to confirm."
+                  : "e.g. Any specific details to mention in the email..."
+                } value={docDetails.notes} onChange={e => setDocDetails({ ...docDetails, notes: e.target.value })} />
+              </div>
+
+              {/* Generate Button */}
+              {plan.maxDocs && docCount >= plan.maxDocs ? (
+                <div className="card" style={{ padding: 20, textAlign: "center", background: "var(--red-soft)", border: "1px solid var(--red)" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--red)", marginBottom: 6 }}>📄 Document limit reached ({plan.maxDocs}/mo)</div>
+                  <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>Upgrade to Business for unlimited documents.</div>
+                  <button className="btn btn-p" style={{ fontSize: 13 }} onClick={() => window.open(STRIPE_LINKS.business, "_blank")}>Upgrade to Business →</button>
+                </div>
+              ) : (
+                <button className="btn btn-p" style={{ width: "100%", padding: 16, fontSize: 16, marginBottom: 20 }}
+                  onClick={() => { genDoc(); if(plan.maxDocs) setDocCount(c => c+1); }}
+                  disabled={docLoading || !docDetails.clientName}>
+                  {docLoading ? "Generating your document..." : !docDetails.clientName ? "Enter client name to generate →" : `Generate ${docType === "invoice" ? "Invoice" : docType === "quote" ? "Quote" : "Email"} → ${plan.maxDocs ? "("+docCount+"/"+plan.maxDocs+")" : "Unlimited"}`}
+                </button>
+              )}
+
+              {docLoading && (
+                <div style={{ textAlign: "center", padding: 28, background: "white", borderRadius: 14, marginBottom: 14 }}>
+                  <div style={{ marginBottom: 8 }}><span className="dot" style={{ marginRight: 5 }} /><span className="dot" style={{ marginRight: 5 }} /><span className="dot" /></div>
+                  <div style={{ fontSize: 13, color: "var(--muted)" }}>AI is generating your professional document...</div>
+                </div>
+              )}
+
+              {docResult && !docLoading && (
+                <div className="card" style={{ overflow: "hidden", marginBottom: 20 }}>
+                  <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--green-soft)" }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--green)" }}>✅ Document Ready — Copy and use it!</span>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button className="btn" style={{ padding: "4px 12px", fontSize: 12, background: "var(--accent-soft)", color: "var(--accent)", border: "none" }} onClick={() => copyText(docResult, "doc")}>{copied === "doc" ? "Copied! ✓" : "📋 Copy"}</button>
+                      <button className="btn" style={{ padding: "4px 12px", fontSize: 12, background: "var(--green-soft)", color: "var(--green)", border: "none" }} onClick={() => { setDocResult(null); setDocDetails({ ...docDetails, clientName: "", clientEmail: "", clientPhone: "", items: [{ desc: "", qty: "1", price: "" }, { desc: "", qty: "1", price: "" }, { desc: "", qty: "1", price: "" }], emailBody: "", notes: "" }); }}>🔄 New</button>
+                    </div>
+                  </div>
+                  <pre style={{ padding: 16, margin: 0, fontSize: 12, lineHeight: 1.7, whiteSpace: "pre-wrap", fontFamily: "monospace", background: "var(--bg)", maxHeight: 400, overflow: "auto" }}>{docResult}</pre>
+                  <div style={{ padding: "10px 16px", borderTop: "1px solid var(--border)", fontSize: 11, color: "var(--muted)" }}>
+                    💡 Copy this document → paste into Word, Google Docs or your email client. Adjust any final details before sending.
+                  </div>
                 </div>
               )}
             </div>
