@@ -786,8 +786,9 @@ ${bookingEmailStr}`;
       {/* Stats */}
       <section className="fu fu4" style={{ maxWidth: 680, margin: "0 auto 56px", padding: "0 24px" }}>
         <div className="m-2col" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10 }}>
-          {[{ n: "5", l: "Languages" }, { n: "24/7", l: "Always On" }, { n: "14", l: "Days Free Trial" }, { n: "5 min", l: "Setup Time" }].map((s, i) => (
+          {[{ n: "5", l: "Languages", icon: "🌍" }, { n: "24/7", l: "Always On", icon: "🕐" }, { n: "14", l: "Days Free Trial", icon: "🎁" }, { n: "5 min", l: "Setup Time", icon: "⚡" }].map((s, i) => (
             <div key={i} className="card" style={{ padding: "20px 14px", textAlign: "center" }}>
+              <div style={{ fontSize: 22, marginBottom: 4 }}>{s.icon}</div>
               <div style={{ fontSize: 28, fontWeight: 800, color: "var(--accent)", fontFamily: "var(--display)" }}>{s.n}</div>
               <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500, marginTop: 2 }}>{s.l}</div>
             </div>
@@ -877,8 +878,8 @@ ${bookingEmailStr}`;
         </div>
         <div className="m-stack" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
           {[
-            { icon: "🇱🇺", title: "Only platform supporting Letzebuergesch", desc: "No other AI assistant platform in the world supports native Letzebuergesch. Your Luxembourg customers can chat in their language for the first time.", tag: "Unique advantage" },
-            { icon: "🇪🇺", title: "Built in Europe, for Europe", desc: "LuxReplier is hosted on European infrastructure. Designed with privacy in mind for businesses operating in the EU and Luxembourg market.", tag: "EU infrastructure" },
+            { icon: "🌍", title: "Only platform supporting Letzebuergesch", desc: "No other AI assistant platform in the world supports native Letzebuergesch. Your Luxembourg customers can chat in their language for the first time.", tag: "Unique advantage" },
+            { icon: "🛡️", title: "Built in Europe, for Europe", desc: "LuxReplier is hosted on European infrastructure. Designed with privacy in mind for businesses operating in the EU and Luxembourg market.", tag: "EU infrastructure" },
             { icon: "⚡", title: "Live in under 5 minutes", desc: "No developer needed. Fill in your business details, and your AI assistant is live and answering customers immediately. No technical skills required.", tag: "Instant setup" },
           ].map((c, i) => (
             <div key={i} style={{ background: "white", borderRadius: 16, border: "1px solid var(--border)", padding: "28px 22px", boxShadow: "var(--shadow)", textAlign: "center" }}>
